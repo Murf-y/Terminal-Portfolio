@@ -9,6 +9,12 @@
       "link": "https://socrat.vercel.app/"
     },
     {
+      "title": "Game of Life",
+      "image_path": "../images/projects/gameoflife.png",
+      "tags": ["Cellular Automaton", "ReactJs"],
+      "link": "https://lifeingame.netlify.app/"
+    },
+    {
       "title": "Smoll 🔗",
       "image_path": "../images/projects/smoll.png",
       "tags": ["Shortner", "solidjs", "mongodb"],

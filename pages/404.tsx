@@ -1,20 +1,28 @@
 import Head from 'next/head'
-import { useEffect } from 'react'
+import Link from 'next/link'
 
 export default function FourOhFour(): React.ReactElement {
   return (
     <>
       <Head>
-        <title>Page Not Found</title>
+        <title>404 — Not Found</title>
       </Head>
-      <div className="min-h-screen grid items-cente grid-cols-1 justify-items-center pt-24 pb-20 bg-blue">
-        <h1 className="self-end divide-x-2 divide-black">
-          <span className="px-2 font-bold text-primary-lighter text-9xl">404</span>
-          <span className="px-2 text-primary-lighter text-5xl">Page Not Found</span>
-        </h1>
-        <a href="/" className="self-start my-10 text-md text-primary border-2 p-2 rounded-lg">
-          Go back home
-        </a>
+
+      <div className="min-h-screen flex flex-col items-center justify-center px-6">
+        <div className="text-center stagger-children">
+          <h1 className="font-display text-[clamp(7rem,22vw,16rem)] leading-none text-text tracking-tight">
+            4<span className="text-accent">0</span>4
+          </h1>
+          <p className="font-mono text-[13px] text-muted mt-6 mb-14">
+            This page doesn&apos;t exist. Maybe it never did.
+          </p>
+          <Link
+            href="/"
+            className="inline-block font-mono text-[11px] text-void bg-accent px-8 py-3 hover:opacity-80 transition-opacity duration-200 tracking-[0.2em] uppercase font-semibold"
+          >
+            Go Home
+          </Link>
+        </div>
       </div>
     </>
   )

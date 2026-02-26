@@ -17,6 +17,7 @@ module.exports = {
       'accent-dim': 'var(--color-accent-dim)',
       white: '#FFFFFF',
       black: '#000000',
+      red: { 400: '#f87171' },
     },
     fontFamily: {
       display: ['"Instrument Serif"', 'serif'],

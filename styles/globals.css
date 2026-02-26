@@ -182,3 +182,18 @@
 [data-theme='light'] #hero-particles canvas {
   opacity: 0.35;
 }
+
+/* ─── Terminal scrollbar ─── */
+.terminal-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.terminal-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.terminal-scrollbar::-webkit-scrollbar-thumb {
+  background: #3a3a3d;
+  border-radius: 3px;
+}
+.terminal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

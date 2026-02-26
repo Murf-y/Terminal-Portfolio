@@ -1,14 +1,19 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import ThemeToggle from './ThemeToggle'
 import { useTheme } from '@hooks/useTheme'
+
+/* Lazy-load Terminal — heavy component, only used on demand */
+const Terminal = dynamic(() => import('./Terminal'), { ssr: false })
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const router = useRouter()
   const { theme } = useTheme()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [terminalOpen, setTerminalOpen] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -21,13 +26,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     setMenuOpen(false)
   }, [router.pathname])
 
-  /* Lock body scroll when menu is open */
+  /* Lock body scroll when menu or terminal is open */
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? 'hidden' : ''
+    document.body.style.overflow = menuOpen || terminalOpen ? 'hidden' : ''
     return () => {
       document.body.style.overflow = ''
     }
-  }, [menuOpen])
+  }, [menuOpen, terminalOpen])
 
   const logoSrc = theme === 'light' ? '/images/Logo_dark.png' : '/images/Logo.png'
 
@@ -69,6 +74,19 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             /resume
           </a>
           <ThemeToggle />
+          {/* Terminal toggle */}
+          <button
+            onClick={() => setTerminalOpen(true)}
+            className="relative group w-8 h-8 flex items-center justify-center rounded-md border border-transparent hover:border-border/30 bg-transparent hover:bg-accent-dim transition-all duration-200 cursor-pointer"
+            aria-label="Open terminal mode"
+          >
+            <span className="font-mono text-[11px] text-muted group-hover:text-accent transition-colors duration-200 font-bold leading-none">
+              {'>_'}
+            </span>
+            <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[9px] text-void bg-text px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+              terminal mode
+            </span>
+          </button>
           <a
             href="mailto:charbelfayad64@gmail.com"
             className="hidden lg:inline-block text-void bg-accent px-4 py-1.5 text-[11px] font-mono font-semibold tracking-widest uppercase hover:opacity-80 transition-opacity duration-200"
@@ -77,9 +95,16 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </a>
         </div>
 
-        {/* Mobile: theme toggle + hamburger */}
-        <div className="flex md:hidden items-center gap-3 z-50">
+        {/* Mobile: theme toggle + terminal + hamburger */}
+        <div className="flex md:hidden items-center gap-2 z-50">
           <ThemeToggle />
+          <button
+            onClick={() => setTerminalOpen(true)}
+            className="w-7 h-7 flex items-center justify-center rounded-md border border-transparent hover:border-border/30 bg-transparent hover:bg-accent-dim transition-all duration-200"
+            aria-label="Open terminal mode"
+          >
+            <span className="font-mono text-[10px] text-muted font-bold leading-none">{'>_'}</span>
+          </button>
           <button
             onClick={() => setMenuOpen((v) => !v)}
             className="relative w-7 h-7 flex flex-col items-center justify-center gap-[5px]"
@@ -191,6 +216,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
         </div>
       </footer>
+
+      {/* ─── Terminal Overlay ─── */}
+      {terminalOpen && <Terminal onExit={() => setTerminalOpen(false)} />}
     </div>
   )
 }

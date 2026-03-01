@@ -3,29 +3,47 @@
   "researchgate": "https://www.researchgate.net/profile/Charbel-Fayad",
   "orcid": "https://orcid.org/my-orcid?orcid=0009-0007-0529-5003",
   "papers": [
+
+
     {
       "title": "A Scale-Free Network for Modeling a Homogeneous Ensemble",
       "abstract": "Ensemble learning aims to enhance predictions by aggregating multiple learners through a model ensemble and thus facilitating a more accurate capture of underlying data distribution. This study proposes a scale-free network-based ensemble learning (NEL) algorithm based on neural networks as base learners, allowing for a balance between individual base learner accuracy and diversity. Optimal weights for ensemble integration are calculated based on the centrality of a node in the heterogeneous network. The scale-free topology of NEL inherently allows for ensemble pruning due to its power-law degree distribution. Experimental results derived from averaging the ensemble performance over ten runs show the favorability and robustness of our approach.",
       "image_path": "/images/projects/scale_free_heterogeneous_network_for_modeling_a_homogeneous_ensemble.png",
-      "tags": ["Ensemble Learning", "Scale-Free Networks", "Neural Networks"],
+      "tags": [
+        "Ensemble Learning",
+        "Scale-Free Networks",
+        "Neural Networks"
+      ],
       "paper_link": "https://www.techrxiv.org/users/993069/articles/1391165-a-scale-free-network-for-modeling-a-homogeneous-ensemble",
       "github_link": "https://github.com/Murf-y/NetworkedEnsembleLearning",
       "year": 2025
     },
+
+
     {
       "title": "A Scale-Free Network-Based Genetic Algorithm with Balanced Exploration and Exploitation",
       "abstract": "Genetic algorithms (GA) are widely used to solve complex computational problems. This paper introduces a novel network-based approach that utilizes phenotypic and genotypic similarities to establish inter-chromosomal links. Based on the scale-free property of the Barabasi-Albert (BA) model, we dynamically assign authority nodes to drive the evolutionary process. Comparative evaluations against panmictic GA and a previously developed network-based genetic algorithm demonstrate favorable results. The assessments involve the average best fitness over 50 runs conducted on eight well-known benchmark functions.",
       "image_path": "/images/projects/a-scale-free-network-based-genetic-algorithm-with-balanced-exploration-and-exploitation.png",
-      "tags": ["Genetic Algorithms", "Scale-Free Networks", "Optimization"],
-      "paper_link": "https://www.techrxiv.org/users/993069/articles/1391160-a-scale-free-network-based-genetic-algorithm-with-balanced-exploration-and-exploitation",
+      "tags": [
+        "Genetic Algorithms",
+        "Scale-Free Networks",
+        "Optimization"
+      ],
+      "paper_link": "https://engrxiv.org/preprint/view/5690/version/7559",
       "github_link": "https://github.com/Murf-y/Enhanced-Networked-Genetic-Algorithm",
-      "year": 2024
+      "year": 2025
     },
+
+
     {
       "title": "Adaptive Neural Topologies: A Dynamic Approach to Learning Network Structures during Training",
       "abstract": "This paper introduces the Adaptive Topology Neural Network (ATNN), an architecture that dynamically optimizes its connections to emulate the efficiency of biological neural networks. Starting as a fully connected network, ATNN adapts to a sparser topology by utilizing an edge importance metric to selectively rewire non-important connections, enabling skip connections similar to ResNet. Empirical evaluations across 8 classification datasets demonstrate that ATNN significantly outperforms standard fixed-topology ANNs in MSE, accuracy, precision, and recall.",
       "image_path": "/images/projects/adaptive-neural-topologies-a-dynamic-approach-to-learning-network-structures-during-training.png",
-      "tags": ["Neural Networks", "Adaptive Topology", "Machine Learning"],
+      "tags": [
+        "Neural Networks",
+        "Adaptive Topology",
+        "Machine Learning"
+      ],
       "paper_link": "https://www.techrxiv.org/users/993069/articles/1355310-adaptive-neural-topologies-a-dynamic-approach-to-learning-network-structures-during-training",
       "github_link": "https://github.com/Murf-y/Adaptive-Topology-Neural-Network-ATNN",
       "year": 2024

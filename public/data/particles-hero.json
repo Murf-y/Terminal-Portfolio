@@ -5,7 +5,7 @@
       "value": 50,
       "density": {
         "enable": true,
-        "value_area": 900
+        "value_area": 800
       }
     },
     "color": {
@@ -15,42 +15,42 @@
       "type": "circle"
     },
     "opacity": {
-      "value": 0.5,
+      "value": 0.6,
       "random": true,
       "anim": {
         "enable": true,
-        "speed": 0.4,
-        "opacity_min": 0.05,
+        "speed": 0.5,
+        "opacity_min": 0.1,
         "sync": false
       }
     },
     "size": {
-      "value": 2,
+      "value": 2.5,
       "random": true,
       "anim": {
         "enable": true,
         "speed": 1,
-        "size_min": 0.5,
+        "size_min": 0.8,
         "sync": false
       }
     },
     "line_linked": {
       "enable": true,
-      "distance": 180,
+      "distance": 160,
       "color": "#2E9025",
-      "opacity": 0.06,
-      "width": 0.8
+      "opacity": 0.1,
+      "width": 1
     },
     "move": {
       "enable": true,
-      "speed": 0.6,
+      "speed": 0.7,
       "direction": "none",
       "random": true,
       "straight": false,
       "out_mode": "out",
       "bounce": false,
       "attract": {
-        "enable": false,
+        "enable": true,
         "rotateX": 600,
         "rotateY": 1200
       }
@@ -70,9 +70,9 @@
     },
     "modes": {
       "grab": {
-        "distance": 200,
+        "distance": 180,
         "line_linked": {
-          "opacity": 0.15
+          "opacity": 0.35
         }
       }
     }

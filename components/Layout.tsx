@@ -4,6 +4,12 @@ import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import ThemeToggle from './ThemeToggle'
 import { useTheme } from '@hooks/useTheme'
+import {
+  trackTerminalOpen,
+  trackResumeOpen,
+  trackContactClick,
+  trackSocialClick,
+} from '@hooks/useAnalytics'
 
 /* Lazy-load Terminal — heavy component, only used on demand */
 const Terminal = dynamic(() => import('./Terminal'), { ssr: false })
@@ -76,7 +82,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <ThemeToggle />
           {/* Terminal toggle */}
           <button
-            onClick={() => setTerminalOpen(true)}
+            onClick={() => {
+              trackTerminalOpen()
+              setTerminalOpen(true)
+            }}
             className="relative group w-8 h-8 flex items-center justify-center rounded-md border border-transparent hover:border-border/30 bg-transparent hover:bg-accent-dim transition-all duration-200 cursor-pointer"
             aria-label="Open terminal mode"
           >
@@ -90,6 +99,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <a
             href="mailto:charbelfayad64@gmail.com"
             className="hidden lg:inline-block text-void bg-accent px-4 py-1.5 text-[11px] font-mono font-semibold tracking-widest uppercase hover:opacity-80 transition-opacity duration-200"
+            onClick={() => trackContactClick('nav_desktop')}
           >
             Contact
           </a>
@@ -99,7 +109,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <div className="flex md:hidden items-center gap-2 z-50">
           <ThemeToggle />
           <button
-            onClick={() => setTerminalOpen(true)}
+            onClick={() => {
+              trackTerminalOpen()
+              setTerminalOpen(true)
+            }}
             className="w-7 h-7 flex items-center justify-center rounded-md border border-transparent hover:border-border/30 bg-transparent hover:bg-accent-dim transition-all duration-200"
             aria-label="Open terminal mode"
           >
@@ -188,12 +201,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               target="_blank"
               rel="noreferrer"
               className="font-mono text-[11px] text-muted hover:text-accent transition-colors duration-200"
+              onClick={() => trackResumeOpen('footer')}
             >
               Resume
             </a>
             <a
               href="mailto:charbelfayad64@gmail.com"
               className="font-mono text-[11px] text-muted hover:text-accent transition-colors duration-200"
+              onClick={() => trackContactClick('footer')}
             >
               Email
             </a>
@@ -202,6 +217,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               target="_blank"
               rel="noreferrer"
               className="font-mono text-[11px] text-muted hover:text-accent transition-colors duration-200"
+              onClick={() => trackSocialClick('github', 'footer')}
             >
               GitHub
             </a>
@@ -210,6 +226,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               target="_blank"
               rel="noreferrer"
               className="font-mono text-[11px] text-muted hover:text-accent transition-colors duration-200"
+              onClick={() => trackSocialClick('researchgate', 'footer')}
             >
               ResearchGate
             </a>

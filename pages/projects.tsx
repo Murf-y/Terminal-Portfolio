@@ -3,6 +3,7 @@ import projects_json from '../public/data/projects.json'
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import Reveal from '@components/Reveal'
+import { trackProjectClick } from '@hooks/useAnalytics'
 
 /* rendering-hoist-jsx: derive static data outside the component */
 const projects: Project[] = projects_json.projects.map((project) => ({
@@ -40,7 +41,13 @@ const ProjectsPage: NextPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 sm:gap-x-6 gap-y-10 sm:gap-y-14">
             {projects.map((project, i) => (
               <Reveal key={project.title + i} delay={0.04 + (i % 3) * 0.08}>
-                <a href={project.link} target="_blank" rel="noreferrer" className="group block">
+                <a
+                  href={project.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group block"
+                  onClick={() => trackProjectClick(project.title, project.link || '')}
+                >
                   {/* Image */}
                   <div className="relative aspect-[4/3] overflow-hidden bg-surface border border-border/60 mb-4 group-hover:border-accent/30 transition-all duration-500">
                     <img

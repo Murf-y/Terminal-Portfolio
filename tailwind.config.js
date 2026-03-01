@@ -20,7 +20,8 @@ module.exports = {
       red: { 400: '#f87171' },
     },
     fontFamily: {
-      display: ['"Instrument Serif"', 'serif'],
+      display: ['"Bebas Neue"', 'serif'],
+      'sub-display': ['"Instrument Serif"', 'serif'],
       mono: ['"JetBrains Mono"', 'monospace'],
     },
     screens: {

@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { useTheme } from '@hooks/useTheme'
+import { trackTerminalCommand } from '@hooks/useAnalytics'
 import projects_json from '../public/data/projects.json'
 import papers_json from '../public/data/papers.json'
 
 /* ═══════════════════════════════════════════
    Terminal Mode — macOS-style interactive terminal
+   Draggable, resizable, theme-aware
    ═══════════════════════════════════════════ */
 
 interface OutputLine {
@@ -17,6 +19,12 @@ interface OutputLine {
 
 let lineIdCounter = 0
 const nextId = () => ++lineIdCounter
+
+/* ─── Size constraints ─── */
+const MIN_W = 400
+const MIN_H = 300
+const MAX_W_RATIO = 0.95 // % of viewport
+const MAX_H_RATIO = 0.92
 
 /* ─── ASCII art header ─── */
 const ASCII_BANNER = `
@@ -237,8 +245,138 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
   const [historyIndex, setHistoryIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const windowRef = useRef<HTMLDivElement>(null)
 
   const logoSrc = theme === 'light' ? '/images/Logo_dark.png' : '/images/Logo.png'
+
+  /* ─── Drag state ─── */
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null) // null = centered
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null) // null = default
+  const [isMaximized, setIsMaximized] = useState(false)
+  const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(
+    null
+  )
+  const resizeRef = useRef<{
+    startX: number
+    startY: number
+    origW: number
+    origH: number
+    edge: string
+  } | null>(null)
+
+  /* Compute default size */
+  const getDefaultSize = useCallback(() => {
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 900
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 600
+    const isMobile = vw < 640
+    return {
+      w: isMobile ? vw - 24 : Math.min(860, vw * 0.85),
+      h: isMobile ? vh - 24 : Math.min(vh * 0.8, 680),
+    }
+  }, [])
+
+  /* Compute centered pos */
+  const getCenteredPos = useCallback((s: { w: number; h: number }) => {
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 900
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 600
+    return { x: (vw - s.w) / 2, y: (vh - s.h) / 2 }
+  }, [])
+
+  /* Current resolved size & pos */
+  const currentSize = isMaximized
+    ? {
+        w: typeof window !== 'undefined' ? window.innerWidth : 900,
+        h: typeof window !== 'undefined' ? window.innerHeight : 600,
+      }
+    : size || getDefaultSize()
+  const currentPos = isMaximized ? { x: 0, y: 0 } : pos || getCenteredPos(currentSize)
+
+  /* ─── Drag handlers ─── */
+  const onTitleBarMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (isMaximized) return
+      e.preventDefault()
+      const resolved = pos || getCenteredPos(size || getDefaultSize())
+      dragRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        origX: resolved.x,
+        origY: resolved.y,
+      }
+
+      const onMove = (ev: MouseEvent) => {
+        if (!dragRef.current) return
+        const dx = ev.clientX - dragRef.current.startX
+        const dy = ev.clientY - dragRef.current.startY
+        setPos({ x: dragRef.current.origX + dx, y: dragRef.current.origY + dy })
+      }
+      const onUp = () => {
+        dragRef.current = null
+        window.removeEventListener('mousemove', onMove)
+        window.removeEventListener('mouseup', onUp)
+      }
+      window.addEventListener('mousemove', onMove)
+      window.addEventListener('mouseup', onUp)
+    },
+    [isMaximized, pos, size, getCenteredPos, getDefaultSize]
+  )
+
+  /* ─── Resize handlers ─── */
+  const startResize = useCallback(
+    (edge: string, e: React.MouseEvent) => {
+      if (isMaximized) return
+      e.preventDefault()
+      e.stopPropagation()
+      const s = size || getDefaultSize()
+      resizeRef.current = { startX: e.clientX, startY: e.clientY, origW: s.w, origH: s.h, edge }
+      const resolvedPos = pos || getCenteredPos(s)
+
+      const maxW = window.innerWidth * MAX_W_RATIO
+      const maxH = window.innerHeight * MAX_H_RATIO
+
+      const onMove = (ev: MouseEvent) => {
+        if (!resizeRef.current) return
+        const dx = ev.clientX - resizeRef.current.startX
+        const dy = ev.clientY - resizeRef.current.startY
+        let newW = resizeRef.current.origW
+        let newH = resizeRef.current.origH
+        let newX = resolvedPos.x
+        let newY = resolvedPos.y
+
+        if (edge.includes('e')) newW = Math.max(MIN_W, Math.min(maxW, resizeRef.current.origW + dx))
+        if (edge.includes('w')) {
+          newW = Math.max(MIN_W, Math.min(maxW, resizeRef.current.origW - dx))
+          newX = resolvedPos.x + (resizeRef.current.origW - newW)
+        }
+        if (edge.includes('s')) newH = Math.max(MIN_H, Math.min(maxH, resizeRef.current.origH + dy))
+        if (edge.includes('n')) {
+          newH = Math.max(MIN_H, Math.min(maxH, resizeRef.current.origH - dy))
+          newY = resolvedPos.y + (resizeRef.current.origH - newH)
+        }
+
+        setSize({ w: newW, h: newH })
+        setPos({ x: newX, y: newY })
+      }
+      const onUp = () => {
+        resizeRef.current = null
+        window.removeEventListener('mousemove', onMove)
+        window.removeEventListener('mouseup', onUp)
+      }
+      window.addEventListener('mousemove', onMove)
+      window.addEventListener('mouseup', onUp)
+    },
+    [isMaximized, pos, size, getCenteredPos, getDefaultSize]
+  )
+
+  /* ─── Double-click title bar to maximize/restore ─── */
+  const onTitleBarDoubleClick = useCallback(() => {
+    setIsMaximized((m) => !m)
+  }, [])
+
+  /* ─── Green button = maximize ─── */
+  const onGreenClick = useCallback(() => {
+    setIsMaximized((m) => !m)
+  }, [])
 
   /* Auto-run help on mount */
   useEffect(() => {
@@ -387,6 +525,7 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
       setCmdHistory((h) => [raw, ...h])
       setHistoryIndex(-1)
       setInput('')
+      if (cmd) trackTerminalCommand(cmd)
     },
     [onExit, router, theme, toggle]
   )
@@ -475,20 +614,90 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
     }
   }
 
+  /* Resize edge size */
+  const EDGE = 6
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 md:p-10 bg-black/60 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
+      onClick={(e) => {
+        // Click on backdrop (not terminal) = close
+        if (e.target === e.currentTarget) onExit()
+      }}
+    >
+      {/* Terminal Window */}
       <div
-        className="w-full max-w-4xl h-full max-h-[85vh] sm:max-h-[80vh] flex flex-col rounded-xl overflow-hidden shadow-2xl border border-border border-opacity-30"
-        style={{ background: theme === 'dark' ? '#0d0d0f' : '#f4f4f5' }}
+        ref={windowRef}
+        className={`absolute flex flex-col overflow-hidden shadow-2xl border border-border ${
+          isMaximized ? 'rounded-none' : 'rounded-xl'
+        }`}
+        style={{
+          left: currentPos.x,
+          top: currentPos.y,
+          width: currentSize.w,
+          height: currentSize.h,
+          background: theme === 'dark' ? '#0d0d0f' : '#f4f4f5',
+          transition:
+            isMaximized || dragRef.current || resizeRef.current
+              ? 'none'
+              : 'left 0.25s ease, top 0.25s ease, width 0.25s ease, height 0.25s ease',
+        }}
       >
+        {/* ─── Resize handles (8 edges) ─── */}
+        {!isMaximized && (
+          <>
+            {/* Top */}
+            <div
+              className="absolute top-0 left-[8px] right-[8px] h-[6px] cursor-n-resize z-20"
+              onMouseDown={(e) => startResize('n', e)}
+            />
+            {/* Bottom */}
+            <div
+              className="absolute bottom-0 left-[8px] right-[8px] h-[6px] cursor-s-resize z-20"
+              onMouseDown={(e) => startResize('s', e)}
+            />
+            {/* Left */}
+            <div
+              className="absolute top-[8px] bottom-[8px] left-0 w-[6px] cursor-w-resize z-20"
+              onMouseDown={(e) => startResize('w', e)}
+            />
+            {/* Right */}
+            <div
+              className="absolute top-[8px] bottom-[8px] right-0 w-[6px] cursor-e-resize z-20"
+              onMouseDown={(e) => startResize('e', e)}
+            />
+            {/* Corners */}
+            <div
+              className="absolute top-0 left-0 w-[10px] h-[10px] cursor-nw-resize z-30"
+              onMouseDown={(e) => startResize('nw', e)}
+            />
+            <div
+              className="absolute top-0 right-0 w-[10px] h-[10px] cursor-ne-resize z-30"
+              onMouseDown={(e) => startResize('ne', e)}
+            />
+            <div
+              className="absolute bottom-0 left-0 w-[10px] h-[10px] cursor-sw-resize z-30"
+              onMouseDown={(e) => startResize('sw', e)}
+            />
+            <div
+              className="absolute bottom-0 right-0 w-[10px] h-[10px] cursor-se-resize z-30"
+              onMouseDown={(e) => startResize('se', e)}
+            />
+          </>
+        )}
+
+        {/* ─── Title Bar (macOS-style) — draggable ─── */}
         <div
-          className="flex items-center justify-between px-4 py-2.5 border-b select-none flex-shrink-0"
+          className="flex items-center justify-between px-4 py-2.5 border-b select-none flex-shrink-0 cursor-grab active:cursor-grabbing"
           style={{
             background: theme === 'dark' ? '#1c1c1e' : '#e8e8ea',
             borderColor: theme === 'dark' ? '#2a2a2d' : '#d4d4d8',
           }}
+          onMouseDown={onTitleBarMouseDown}
+          onDoubleClick={onTitleBarDoubleClick}
         >
-          <div className="flex items-center gap-2">
+          {/* Traffic lights */}
+          <div className="flex items-center gap-2" onMouseDown={(e) => e.stopPropagation()}>
             <button
               onClick={onExit}
               className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-110 transition-all duration-150 group relative"
@@ -507,9 +716,21 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
               </svg>
             </button>
             <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
-            <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+            <button
+              onClick={onGreenClick}
+              className="w-3 h-3 rounded-full bg-[#28c840] hover:brightness-110 transition-all duration-150 group relative"
+              aria-label="Maximize terminal"
+            >
+              <svg
+                className="absolute inset-0 w-3 h-3 text-[#0b5515] opacity-0 group-hover:opacity-100 transition-opacity"
+                viewBox="0 0 12 12"
+              >
+                <path d="M3 6h6M6 3v6" stroke="currentColor" strokeWidth="1.2" fill="none" />
+              </svg>
+            </button>
           </div>
 
+          {/* Tab */}
           <div className="flex items-center gap-2">
             <img src={logoSrc} alt="" className="w-4 h-4 opacity-60" />
             <span
@@ -520,9 +741,11 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
             </span>
           </div>
 
+          {/* Spacer to balance layout */}
           <div className="w-[52px]" />
         </div>
 
+        {/* ─── Terminal Body ─── */}
         <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-5 py-4 font-mono text-[12px] sm:text-[13px] leading-[1.7] cursor-text terminal-scrollbar"
@@ -530,6 +753,7 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
         >
           {history.map(renderLine)}
 
+          {/* Input line */}
           <div className="flex items-center gap-2 mt-1">
             <span className="text-accent font-semibold select-none">❯</span>
             <input

@@ -8,6 +8,13 @@ import papers_json from '../public/data/papers.json'
 import type { Project } from '@models/project'
 import type { Paper } from '@models/paper'
 import Reveal from '@components/Reveal'
+import {
+  trackCTA,
+  trackResumeOpen,
+  trackProjectClick,
+  trackPaperClick,
+  trackOutboundClick,
+} from '@hooks/useAnalytics'
 
 /* bundle-dynamic-imports: Particles + tsparticles is ~200KB — lazy-load, skip SSR */
 const Particles = dynamic(() => import('react-particles'), { ssr: false })
@@ -68,7 +75,7 @@ const Home: NextPage = () => {
           <h1 className="font-display text-[clamp(3rem,10vw,9rem)] leading-[0.85] tracking-tight text-text">
             Charbel Fayad
           </h1>
-          <p className="font-display text-[clamp(1.4rem,3.5vw,3.2rem)] text-muted italic mt-2 md:mt-3 ml-[2px]">
+          <p className="font-sub-display text-[clamp(1.4rem,3.5vw,3.2rem)] text-muted mt-2 md:mt-3 ml-[2px]">
             is a software engineer &amp; researcher who builds
             <br className="hidden sm:block" />{' '}
             <span className="text-accent">things that live on the internet</span>.
@@ -83,6 +90,7 @@ const Home: NextPage = () => {
                 className="text-accent link-hover"
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => trackOutboundClick('murex', 'https://www.murex.com/en')}
               >
                 Murex
               </a>{' '}
@@ -95,6 +103,7 @@ const Home: NextPage = () => {
             <Link
               href="/projects"
               className="inline-block font-mono text-[11px] text-void bg-accent px-5 sm:px-6 py-2.5 tracking-[0.15em] uppercase font-semibold hover:opacity-80 transition-opacity duration-200"
+              onClick={() => trackCTA('view_projects', '/projects')}
             >
               View Projects
             </Link>
@@ -103,6 +112,7 @@ const Home: NextPage = () => {
               target="_blank"
               rel="noreferrer"
               className="inline-block font-mono text-[11px] text-accent border border-accent/40 px-5 sm:px-6 py-2.5 tracking-[0.15em] uppercase font-semibold hover:bg-accent-dim transition-all duration-200"
+              onClick={() => trackResumeOpen('hero_cta')}
             >
               Resume &#8599;
             </a>
@@ -155,6 +165,7 @@ const Home: NextPage = () => {
               target="_blank"
               rel="noreferrer"
               className="group block"
+              onClick={() => trackPaperClick(latestPaper.title, latestPaper.paper_link || '')}
             >
               <div className="grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-8">
                 {latestPaper.image_path && (
@@ -227,7 +238,13 @@ const Home: NextPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
           {featured.map((project, i) => (
             <Reveal key={project.title} delay={0.1 + i * 0.12}>
-              <a href={project.link} target="_blank" rel="noreferrer" className="group block">
+              <a
+                href={project.link}
+                target="_blank"
+                rel="noreferrer"
+                className="group block"
+                onClick={() => trackProjectClick(project.title, project.link || '')}
+              >
                 <div className="relative aspect-[4/3] overflow-hidden bg-surface border border-border/60 mb-5 group-hover:border-accent/30 transition-all duration-500">
                   <img
                     src={project.image_path}

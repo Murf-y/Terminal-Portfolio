@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import Reveal from '@components/Reveal'
 import type { Paper } from '@models/paper'
 import papers_json from '../public/data/papers.json'
+import { trackPaperClick, trackSocialClick, trackAbstractExpand } from '@hooks/useAnalytics'
 
 /* rendering-hoist-jsx: derive static data outside the component */
 const papers: Paper[] = papers_json.papers.map((p) => ({
@@ -17,7 +18,7 @@ const papers: Paper[] = papers_json.papers.map((p) => ({
 }))
 
 /* ─── Expandable abstract ─── */
-const AbstractText: React.FC<{ text: string }> = ({ text }) => {
+const AbstractText: React.FC<{ text: string; title: string }> = ({ text, title }) => {
   const [expanded, setExpanded] = useState(false)
 
   return (
@@ -30,7 +31,10 @@ const AbstractText: React.FC<{ text: string }> = ({ text }) => {
         {text}
       </p>
       <button
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => {
+          if (!expanded) trackAbstractExpand(title)
+          setExpanded((v) => !v)
+        }}
         className="mt-2 font-mono text-[10px] text-accent/80 hover:text-accent tracking-[0.15em] uppercase transition-colors duration-200"
       >
         {expanded ? '— Show less' : '+ Show more'}
@@ -68,6 +72,7 @@ const ResearchPage: NextPage = () => {
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 font-mono text-[11px] text-muted border border-border/60 px-3 sm:px-4 py-2 hover:border-accent/40 hover:text-accent transition-all duration-200"
+                onClick={() => trackSocialClick('researchgate', 'research_page')}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -91,6 +96,7 @@ const ResearchPage: NextPage = () => {
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 font-mono text-[11px] text-muted border border-border/60 px-3 sm:px-4 py-2 hover:border-accent/40 hover:text-accent transition-all duration-200"
+                onClick={() => trackSocialClick('orcid', 'research_page')}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -145,7 +151,7 @@ const ResearchPage: NextPage = () => {
                         {paper.title}
                       </h2>
 
-                      <AbstractText text={paper.abstract} />
+                      <AbstractText text={paper.abstract} title={paper.title} />
 
                       {/* Tags */}
                       {paper.tags && paper.tags.length > 0 && (
@@ -169,6 +175,7 @@ const ResearchPage: NextPage = () => {
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-2 font-mono text-[11px] text-accent border border-accent/30 px-3 sm:px-4 py-2 hover:bg-accent-dim transition-all duration-200 tracking-wide"
+                            onClick={() => trackPaperClick(paper.title, paper.paper_link || '')}
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -193,6 +200,7 @@ const ResearchPage: NextPage = () => {
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-2 font-mono text-[11px] text-muted border border-border/60 px-3 sm:px-4 py-2 hover:border-accent/40 hover:text-accent transition-all duration-200 tracking-wide"
+                            onClick={() => trackSocialClick('github', `paper_${paper.title}`)}
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"

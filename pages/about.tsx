@@ -1,6 +1,7 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import Reveal from '@components/Reveal'
+import { trackResumeOpen, trackOutboundClick } from '@hooks/useAnalytics'
 
 const technologies = [
   'TypeScript',
@@ -73,6 +74,7 @@ const AboutPage: NextPage = () => {
                     className="text-accent link-hover"
                     target="_blank"
                     rel="noreferrer"
+                    onClick={() => trackOutboundClick('murex', 'https://www.murex.com/en')}
                   >
                     Murex
                   </a>{' '}
@@ -84,6 +86,7 @@ const AboutPage: NextPage = () => {
                     className="text-accent link-hover"
                     target="_blank"
                     rel="noreferrer"
+                    onClick={() => trackOutboundClick('ninjaco', 'https://ninjaco.vercel.app/')}
                   >
                     NinjaCO
                   </a>{' '}
@@ -93,6 +96,7 @@ const AboutPage: NextPage = () => {
                     className="text-accent link-hover"
                     target="_blank"
                     rel="noreferrer"
+                    onClick={() => trackOutboundClick('ajjerni', 'https://www.ajjerni.com/')}
                   >
                     Ajjerni
                   </a>
@@ -117,6 +121,7 @@ const AboutPage: NextPage = () => {
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-3 font-mono text-[12px] text-accent border border-accent/30 px-5 py-2.5 hover:bg-accent-dim transition-all duration-200 tracking-wide"
+                onClick={() => trackResumeOpen('about_page')}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

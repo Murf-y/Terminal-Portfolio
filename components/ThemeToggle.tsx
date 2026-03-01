@@ -1,12 +1,19 @@
 import React from 'react'
 import { useTheme } from '@hooks/useTheme'
+import { trackThemeToggle } from '@hooks/useAnalytics'
 
 const ThemeToggle: React.FC = () => {
   const { theme, toggle } = useTheme()
 
+  const handleToggle = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark'
+    trackThemeToggle(newTheme)
+    toggle()
+  }
+
   return (
     <button
-      onClick={toggle}
+      onClick={handleToggle}
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       className="relative w-8 h-8 flex items-center justify-center rounded-md border border-transparent hover:border-border/30 bg-transparent hover:bg-accent-dim transition-all duration-200 cursor-pointer group"
     >

@@ -27,7 +27,9 @@ const featured: Project[] = projects_json.projects.slice(0, 3).map((p) => ({
   link: p.link.length === 0 ? projects_json.default_link : p.link,
 }))
 
-const raw = papers_json.papers[0]
+/* Feature the most recent readable paper — skip any retracted/unavailable ones
+   so the homepage CTA never links to a dead page. */
+const raw = papers_json.papers.find((p) => p.paper_link && !p.unavailable)
 const latestPaper: Paper | null = raw
   ? {
       title: raw.title,

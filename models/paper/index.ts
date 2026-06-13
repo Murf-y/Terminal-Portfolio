@@ -6,4 +6,5 @@ export interface Paper {
   paper_link?: string
   github_link?: string
   year?: number
+  unavailable?: boolean
 }

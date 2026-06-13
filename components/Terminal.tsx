@@ -148,12 +148,20 @@ function buildResearch(): OutputLine[] {
     })
     if (line.trim()) lines.push({ id: nextId(), type: 'output', content: line })
 
-    lines.push({
-      id: nextId(),
-      type: 'link',
-      content: `    📄 Paper → ${p.paper_link}`,
-      href: p.paper_link,
-    })
+    if (p.unavailable) {
+      lines.push({
+        id: nextId(),
+        type: 'output',
+        content: `    📄 Paper → unavailable (retracted by publisher)`,
+      })
+    } else {
+      lines.push({
+        id: nextId(),
+        type: 'link',
+        content: `    📄 Paper → ${p.paper_link}`,
+        href: p.paper_link,
+      })
+    }
     if (p.github_link) {
       lines.push({
         id: nextId(),

@@ -15,6 +15,7 @@ const papers: Paper[] = papers_json.papers.map((p) => ({
   paper_link: p.paper_link,
   github_link: p.github_link,
   year: p.year,
+  unavailable: p.unavailable,
 }))
 
 /* ─── Expandable abstract ─── */
@@ -169,7 +170,7 @@ const ResearchPage: NextPage = () => {
 
                       {/* Links */}
                       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                        {paper.paper_link && (
+                        {paper.paper_link && !paper.unavailable && (
                           <a
                             href={paper.paper_link}
                             target="_blank"
@@ -193,6 +194,28 @@ const ResearchPage: NextPage = () => {
                             </svg>
                             Read Paper
                           </a>
+                        )}
+                        {paper.unavailable && (
+                          <span
+                            className="inline-flex items-center gap-2 font-mono text-[11px] text-muted/70 border border-border/40 px-3 sm:px-4 py-2 tracking-wide cursor-not-allowed"
+                            title="This preprint is temporarily unavailable from the publisher."
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                            Paper Unavailable
+                          </span>
                         )}
                         {paper.github_link && (
                           <a

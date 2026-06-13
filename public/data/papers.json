@@ -16,7 +16,8 @@
       ],
       "paper_link": "https://www.techrxiv.org/users/993069/articles/1391165-a-scale-free-network-for-modeling-a-homogeneous-ensemble",
       "github_link": "https://github.com/Murf-y/NetworkedEnsembleLearning",
-      "year": 2025
+      "year": 2025,
+      "unavailable": true
     },
 
 
@@ -31,7 +32,8 @@
       ],
       "paper_link": "https://engrxiv.org/preprint/view/5690/version/7559",
       "github_link": "https://github.com/Murf-y/Enhanced-Networked-Genetic-Algorithm",
-      "year": 2025
+      "year": 2025,
+      "unavailable": false
     },
 
 
@@ -46,7 +48,8 @@
       ],
       "paper_link": "https://www.techrxiv.org/users/993069/articles/1355310-adaptive-neural-topologies-a-dynamic-approach-to-learning-network-structures-during-training",
       "github_link": "https://github.com/Murf-y/Adaptive-Topology-Neural-Network-ATNN",
-      "year": 2024
+      "year": 2024,
+      "unavailable": false
     }
   ]
 }

@@ -3,6 +3,18 @@
   "default_link": "#",
   "projects": [
     {
+      "title": "MulePrep",
+      "image_path": "../images/projects/muleprep.png",
+      "tags": ["MuleSoft", "React", "Cloudflare"],
+      "link": "https://muleprep.pages.dev"
+    },
+    {
+      "title": "Petale",
+      "image_path": "../images/projects/petal.png",
+      "tags": ["Bouquets", "React", "Vite"],
+      "link": "https://petale.live"
+    },
+    {
       "title": "Socrat",
       "image_path": "../images/projects/socrat.png",
       "tags": ["Philosophy", "WebRTC"],

@@ -15,6 +15,12 @@
       "link": "https://petale.live"
     },
     {
+      "title": "Rukhsa",
+      "image_path": "../images/projects/rukhsa.png",
+      "tags": ["Driving Exam", "Multi-language", "PWA"],
+      "link": "https://drivinglb.netlify.app"
+    },
+    {
       "title": "Socrat",
       "image_path": "../images/projects/socrat.png",
       "tags": ["Philosophy", "WebRTC"],

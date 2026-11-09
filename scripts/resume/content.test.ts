@@ -107,11 +107,11 @@ describe('RESUME', () => {
     expect(text).not.toMatch(/private|founder/i)
   })
 
-  it('names and links each app from its project, and spans the apps’ years', () => {
+  it('names and links each app from its project, and spans the earlier work through the latest app', () => {
     const apps = RESUME.projects[1]
     const projects = APP_IDS.map(projectById)
     expect(apps.title).toBe('Apps')
-    expect(apps.period).toBe(yearSpan(projects.map((project) => project.year)))
+    expect(apps.period).toBe('2022 – 2026')
     expect(apps.bullets.slice(0, APP_IDS.length)).toEqual(
       projects.map((project) => ({
         label: project.title,

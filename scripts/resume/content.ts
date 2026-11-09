@@ -109,6 +109,12 @@ const APPS: { id: string; text: string }[] = [
   },
 ]
 
+/** Side projects from before the apps, on one line. */
+const EARLIER = {
+  years: [2022, 2024],
+  text: 'Tourify (Ionic, Angular, PHP), a dollar-rate API (FastAPI, Flutter), Smoll (SolidJS), Mandelbrot (C#).',
+}
+
 export const RESUME: Resume = {
   name: 'Charbel Fayad',
   headline: 'Software Integration Engineer and Scrum Master',
@@ -152,13 +158,10 @@ export const RESUME: Resume = {
     ]),
     {
       title: 'Apps',
-      period: yearSpan(APPS.map(({ id }) => projectById(id).year)),
+      period: yearSpan([...APPS.map(({ id }) => projectById(id).year), ...EARLIER.years]),
       bullets: [
         ...APPS.map(({ id, text }) => projectBullet(id, text)),
-        {
-          label: 'Earlier',
-          text: 'Tourify (Ionic, Angular, PHP), a dollar-rate API (FastAPI, Flutter), Smoll (SolidJS), Mandelbrot (C#).',
-        },
+        { label: 'Earlier', text: EARLIER.text },
       ],
     },
   ],

@@ -1,4 +1,4 @@
-import { ArchivedProject, FeaturedProject } from '@models/project'
+import type { ArchivedProject, FeaturedProject } from '@models/project'
 
 export const FEATURED_PROJECTS: FeaturedProject[] = [
   {
@@ -22,7 +22,8 @@ export const FEATURED_PROJECTS: FeaturedProject[] = [
   {
     id: 'muleprep',
     title: 'MulePrep',
-    description: 'Certification practice engine for MuleSoft exams. React, served from Cloudflare’s edge.',
+    description:
+      'Certification practice engine for MuleSoft exams. React, served from Cloudflare’s edge.',
     stack: ['React', 'Cloudflare'],
     year: 2026,
     link: 'https://muleprep.pages.dev',
@@ -66,28 +67,48 @@ export const ARCHIVED_PROJECTS: ArchivedProject[] = [
     link: 'https://murf-y.github.io/NetworkModelsVisualization/',
   },
   { title: 'Smoll', stack: ['SolidJS', 'MongoDB'], link: 'https://github.com/Murf-y/smoll' },
-  { title: 'NinjaCo', stack: ['Arduino', 'Visual programming'], link: 'https://ninjaco.vercel.app/' },
+  {
+    title: 'NinjaCo',
+    stack: ['Arduino', 'Visual programming'],
+    link: 'https://ninjaco.vercel.app/',
+  },
   {
     title: 'Attractors Simulation',
     stack: ['Canvas 2D'],
     link: 'https://github.com/Murf-y/Attractors-Simulation',
   },
-  { title: 'Enum Dirbuster', stack: ['Multithreading'], link: 'https://github.com/Murf-y/Enum-Dirbuster' },
+  {
+    title: 'Enum Dirbuster',
+    stack: ['Multithreading'],
+    link: 'https://github.com/Murf-y/Enum-Dirbuster',
+  },
   {
     title: 'Pacman Heuristic',
     stack: ['Genetic algorithm', 'A*'],
     link: 'https://github.com/Murf-y/Pacman-Search-Evalution',
   },
-  { title: 'Tourify', stack: ['AngularJS', 'Ionic', 'PHP'], link: 'https://github.com/Murf-y/Tourify' },
+  {
+    title: 'Tourify',
+    stack: ['AngularJS', 'Ionic', 'PHP'],
+    link: 'https://github.com/Murf-y/Tourify',
+  },
   { title: 'Groupify', stack: ['Java', 'PHP'], link: 'https://github.com/Murf-y/Groupify' },
   {
     title: 'Dollar Rate API',
     stack: ['FastAPI', 'BeautifulSoup'],
     link: 'https://github.com/Murf-y/LBP-DollarRate-API',
   },
-  { title: 'USD Rate App', stack: ['Flutter', 'Dart'], link: 'https://github.com/Murf-y/USD-Rate-App' },
+  {
+    title: 'USD Rate App',
+    stack: ['Flutter', 'Dart'],
+    link: 'https://github.com/Murf-y/USD-Rate-App',
+  },
   { title: 'LyricsHub', stack: ['React'], link: 'https://github.com/Murf-y/LyricsHub' },
-  { title: 'Mandelbrot Set', stack: ['C#'], link: 'https://github.com/Murf-y/MandelbrotSet-Visualizer' },
+  {
+    title: 'Mandelbrot Set',
+    stack: ['C#'],
+    link: 'https://github.com/Murf-y/MandelbrotSet-Visualizer',
+  },
   {
     title: 'Terminal Portfolio',
     stack: ['Next.js', 'Tailwind'],

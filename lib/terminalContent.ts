@@ -2,15 +2,10 @@ import { ABOUT_PARAGRAPHS, CONTACT_LINKS, HEADLINE, NAME } from '@content/profil
 import { ARCHIVED_PROJECTS, FEATURED_PROJECTS } from '@content/projects'
 import { PAPERS, paperUrl } from '@content/papers'
 
-export interface OutputLine {
-  id: number
-  type: 'command' | 'output' | 'error' | 'ascii' | 'divider' | 'link' | 'heading'
-  content: string
-  href?: string
-}
-
-let lineIdCounter = 0
-export const nextId = (): number => ++lineIdCounter
+/** One printed line. Only link lines carry a target. */
+export type OutputLine =
+  | { type: 'command' | 'output' | 'error' | 'ascii' | 'divider' | 'heading'; content: string }
+  | { type: 'link'; content: string; href: string }
 
 /** Column width the terminal wraps prose to, indent included. */
 export const WRAP_WIDTH = 68
@@ -48,21 +43,16 @@ export function wrapText(text: string, width: number, indent: string): string[] 
   return lines
 }
 
-const output = (content: string): OutputLine => ({ id: nextId(), type: 'output', content })
-const link = (content: string, href: string): OutputLine => ({
-  id: nextId(),
-  type: 'link',
-  content,
-  href,
-})
-const heading = (content: string): OutputLine => ({ id: nextId(), type: 'heading', content })
+const output = (content: string): OutputLine => ({ type: 'output', content })
+const link = (content: string, href: string): OutputLine => ({ type: 'link', content, href })
+const heading = (content: string): OutputLine => ({ type: 'heading', content })
 const blank = (): OutputLine => output('')
 
 function fileHeader(fileName: string): OutputLine[] {
   return [
-    { id: nextId(), type: 'divider', content: '' },
+    { type: 'divider', content: '' },
     heading(`${INDENT}# ${fileName}`),
-    { id: nextId(), type: 'divider', content: '' },
+    { type: 'divider', content: '' },
     blank(),
   ]
 }
@@ -112,10 +102,16 @@ export function buildAbout(): OutputLine[] {
 
 export function buildProjects(): OutputLine[] {
   const total = FEATURED_PROJECTS.length + ARCHIVED_PROJECTS.length
-  const lines: OutputLine[] = [...fileHeader('projects.md'), output(`${INDENT}${total} projects`), blank()]
+  const lines: OutputLine[] = [
+    ...fileHeader('projects.md'),
+    output(`${INDENT}${total} projects`),
+    blank(),
+  ]
 
   FEATURED_PROJECTS.forEach((project, index) => {
-    lines.push(output(`${INDENT}${String(index + 1).padStart(2, '0')}. ${project.title} (${project.year})`))
+    lines.push(
+      output(`${INDENT}${String(index + 1).padStart(2, '0')}. ${project.title} (${project.year})`)
+    )
     lines.push(...wrapped(project.description, NESTED_INDENT))
     lines.push(output(`${NESTED_INDENT}[${project.stack.join(', ')}]`))
     if (project.link !== undefined) {
@@ -141,7 +137,9 @@ export function buildResearch(): OutputLine[] {
   ]
   PAPERS.forEach((paper) => {
     lines.push(heading(`${INDENT}● ${paper.title}`))
-    lines.push(output(`${NESTED_INDENT}${paper.venue}, ${paper.year}. Tags: ${paper.tags.join(', ')}`))
+    lines.push(
+      output(`${NESTED_INDENT}${paper.venue}, ${paper.year}. Tags: ${paper.tags.join(', ')}`)
+    )
     lines.push(...wrapped(paper.abstract, NESTED_INDENT))
     lines.push(link(`${NESTED_INDENT}Paper → ${paperUrl(paper)}`, paperUrl(paper)))
     if (paper.githubLink !== undefined) {

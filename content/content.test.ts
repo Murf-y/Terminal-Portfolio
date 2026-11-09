@@ -55,7 +55,8 @@ describe('featured projects', () => {
 
   it('show a preview only for projects people can open', () => {
     for (const project of FEATURED_PROJECTS) {
-      if (project.image) expect(project.link, `${project.id} has an image but no link`).toBeDefined()
+      if (project.image)
+        expect(project.link, `${project.id} has an image but no link`).toBeDefined()
     }
   })
 

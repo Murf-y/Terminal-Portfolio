@@ -1,0 +1,18 @@
+---
+import PageHeader from '@components/PageHeader.astro'
+import Base from '@layouts/Base.astro'
+import { NAME } from '@content/profile'
+---
+
+<Base title={`Page not found · ${NAME}`}>
+  <PageHeader title="Page not found" />
+
+  <section class="flex flex-col gap-4">
+    <p>This page doesn’t exist. It may have moved during the redesign.</p>
+    <p>
+      <a href="/" class="text-link" data-astro-prefetch>
+        Go to the home page
+      </a>
+    </p>
+  </section>
+</Base>

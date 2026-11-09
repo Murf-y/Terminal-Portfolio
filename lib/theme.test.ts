@@ -8,6 +8,7 @@ import {
   oppositeTheme,
   persistTheme,
   resolveTheme,
+  themeToggleLabel,
 } from '@lib/theme'
 
 describe('theme helpers', () => {
@@ -40,12 +41,17 @@ describe('theme helpers', () => {
     expect(oppositeTheme('dark')).toBe('light')
     expect(oppositeTheme('light')).toBe('dark')
   })
+
+  it('labels the toggle with the theme a click switches to', () => {
+    expect(themeToggleLabel('dark')).toBe('Switch to light theme')
+    expect(themeToggleLabel('light')).toBe('Switch to dark theme')
+  })
 })
 
 describe('THEME_INIT_SCRIPT', () => {
   const run = () => new Function(THEME_INIT_SCRIPT)()
 
-  it('applies a stored light preference before React loads', () => {
+  it('applies a stored light preference before first paint', () => {
     localStorage.setItem(THEME_STORAGE_KEY, 'light')
     run()
     expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe('light')

@@ -1,0 +1,21 @@
+---
+import ContactLinks from '@components/ContactLinks.astro'
+import PageHeader from '@components/PageHeader.astro'
+import Section from '@components/Section.astro'
+import Base from '@layouts/Base.astro'
+import { ABOUT_PARAGRAPHS, NAME } from '@content/profile'
+---
+
+<Base title={`About · ${NAME}`} description={ABOUT_PARAGRAPHS[0]} path="/about">
+  <PageHeader title="About" />
+
+  <section class="flex flex-col gap-4">
+    {ABOUT_PARAGRAPHS.map((paragraph) => (
+      <p>{paragraph}</p>
+    ))}
+  </section>
+
+  <Section id="contact" title="Contact">
+    <ContactLinks />
+  </Section>
+</Base>

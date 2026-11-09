@@ -1,4 +1,4 @@
-import { Paper } from '@models/paper'
+import type { Paper } from '@models/paper'
 
 /** Newest first. Links resolve through doi.org so they survive server moves. */
 export const PAPERS: Paper[] = [

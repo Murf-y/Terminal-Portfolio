@@ -1,17 +1,14 @@
-import Head from 'next/head'
 import React from 'react'
 import ContactLinks from '@components/ContactLinks'
 import PageHeader from '@components/PageHeader'
+import PageMeta from '@components/PageMeta'
 import Section from '@components/Section'
 import { ABOUT_PARAGRAPHS, NAME } from '@content/profile'
 
 export default function About() {
   return (
     <>
-      <Head>
-        <title>{`About · ${NAME}`}</title>
-        <meta name="description" content={ABOUT_PARAGRAPHS[0]} />
-      </Head>
+      <PageMeta title={`About · ${NAME}`} description={ABOUT_PARAGRAPHS[0]} path="/about" />
 
       <PageHeader title="About" />
 

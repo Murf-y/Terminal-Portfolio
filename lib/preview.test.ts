@@ -1,17 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { PREVIEW_WIDTH, previewHeight, previewTransition } from '@lib/preview'
+import {
+  MORPH_GRACE_MS,
+  PREVIEW_WIDTH,
+  previewHeight,
+  previewTransition,
+  shouldMorph,
+} from '@lib/preview'
 import { FEATURED_PROJECTS } from '@content/projects'
 
 describe('previewHeight', () => {
   it('keeps the screenshot ratio at the default preview width', () => {
     const height = previewHeight({ src: '/a.png', width: 1440, height: 900 })
-    // 320 * 900 / 1440 = 200 exactly
-    expect(height, `1440x900 at ${PREVIEW_WIDTH}px wide`).toBe(200)
+    // 288 * 900 / 1440 = 180 exactly
+    expect(height, `1440x900 at ${PREVIEW_WIDTH}px wide`).toBe(180)
   })
 
   it('rounds to whole pixels', () => {
-    // 320 * 602 / 1195 = 161.20...
-    expect(previewHeight({ src: '/muleprep.png', width: 1195, height: 602 })).toBe(161)
+    // 288 * 602 / 1195 = 145.08...
+    expect(previewHeight({ src: '/muleprep.png', width: 1195, height: 602 })).toBe(145)
   })
 
   it('scales with a custom width', () => {
@@ -34,6 +40,27 @@ describe('previewHeight', () => {
       expect(height, `${project.id} preview height`).toBeGreaterThan(100)
       expect(height, `${project.id} preview height`).toBeLessThan(PREVIEW_WIDTH)
     }
+  })
+})
+
+describe('shouldMorph', () => {
+  it('morphs while the preview is still showing', () => {
+    expect(shouldMorph(true, null)).toBe(true)
+    expect(shouldMorph(true, 10_000)).toBe(true)
+  })
+
+  it('fades in when the preview has never been shown', () => {
+    expect(shouldMorph(false, null)).toBe(false)
+  })
+
+  it('still morphs right after a hide, as when Tab blurs one row and focuses the next', () => {
+    expect(shouldMorph(false, 0)).toBe(true)
+    expect(shouldMorph(false, MORPH_GRACE_MS - 1)).toBe(true)
+  })
+
+  it('fades in once the grace window has passed', () => {
+    expect(shouldMorph(false, MORPH_GRACE_MS)).toBe(false)
+    expect(shouldMorph(false, MORPH_GRACE_MS + 1000)).toBe(false)
   })
 })
 

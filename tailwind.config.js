@@ -11,10 +11,16 @@ module.exports = {
       muted: 'var(--color-muted)',
       rule: 'var(--color-rule)',
       outline: 'var(--color-outline)',
-      // Terminal-only accents
+      // Terminal-only tokens
       accent: 'var(--color-accent)',
+      error: 'var(--color-error)',
+      terminal: {
+        bg: 'var(--color-terminal-bg)',
+        bar: 'var(--color-terminal-bar)',
+        border: 'var(--color-terminal-border)',
+        title: 'var(--color-terminal-title)',
+      },
       black: '#000000',
-      red: { 400: '#f87171' },
     },
     fontFamily: {
       sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
@@ -22,8 +28,8 @@ module.exports = {
     },
     screens: {
       sm: '640px',
-      // Wide enough for the 560px column plus the 48px gap and 320px project preview.
-      preview: '1320px',
+      // Fits the 560px column, PREVIEW_GAP and PREVIEW_WIDTH (lib/preview.ts) on a 1280px laptop.
+      preview: '1280px',
     },
   },
   plugins: [],

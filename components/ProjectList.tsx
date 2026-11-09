@@ -1,7 +1,14 @@
 import Image from 'next/image'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { FeaturedProject, ProjectImage } from '@models/project'
-import { PREVIEW_ROW_OFFSET, PREVIEW_WIDTH, previewHeight, previewTransition } from '@lib/preview'
+import {
+  PREVIEW_GAP,
+  PREVIEW_ROW_OFFSET,
+  PREVIEW_WIDTH,
+  previewHeight,
+  previewTransition,
+  shouldMorph,
+} from '@lib/preview'
 import { trackProjectClick } from '@hooks/useAnalytics'
 
 interface PreviewState {
@@ -9,7 +16,7 @@ interface PreviewState {
   isVisible: boolean
   /** Row offset inside the list, in px. */
   top: number
-  /** True when the preview was already visible, so it slides to the new row instead of fading in. */
+  /** True when the preview was showing (or just hid), so it slides to the new row instead of fading in. */
   isMorphing: boolean
 }
 
@@ -36,6 +43,8 @@ interface ProjectListProps {
 
 const ProjectList: React.FC<ProjectListProps> = ({ projects, showStack = false, source }) => {
   const [preview, setPreview] = useState<PreviewState>(INITIAL_PREVIEW)
+  /** When the preview last stopped showing, in ms since epoch; null until it has been shown. */
+  const hiddenAtRef = useRef<number | null>(null)
   const withImages = projects.filter(hasImage)
   const active = withImages.find((p) => p.id === preview.activeId) ?? withImages[0]
 
@@ -45,10 +54,20 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, showStack = false, 
       return
     }
     const top = row.offsetTop + PREVIEW_ROW_OFFSET
-    setPreview((prev) => ({ activeId: project.id, isVisible: true, top, isMorphing: prev.isVisible }))
+    const hiddenAt = hiddenAtRef.current
+    const msSinceHidden = hiddenAt === null ? null : Date.now() - hiddenAt
+    setPreview((prev) => ({
+      activeId: project.id,
+      isVisible: true,
+      top,
+      isMorphing: shouldMorph(prev.isVisible, msSinceHidden),
+    }))
   }
 
-  const hide = () => setPreview((prev) => ({ ...prev, isVisible: false }))
+  const hide = () => {
+    if (preview.isVisible) hiddenAtRef.current = Date.now()
+    setPreview((prev) => ({ ...prev, isVisible: false }))
+  }
 
   return (
     <div className="relative" onMouseLeave={hide}>
@@ -93,8 +112,9 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, showStack = false, 
         <div
           aria-hidden="true"
           data-testid="project-preview"
-          className="project-preview pointer-events-none absolute left-[calc(100%+48px)] hidden overflow-hidden rounded-lg bg-outline preview:block"
+          className="project-preview pointer-events-none absolute hidden overflow-hidden rounded-lg bg-outline preview:block"
           style={{
+            left: `calc(100% + ${PREVIEW_GAP}px)`,
             width: PREVIEW_WIDTH,
             top: preview.top,
             height: previewHeight(active.image),
@@ -114,8 +134,14 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, showStack = false, 
                 sizes={`${PREVIEW_WIDTH}px`}
                 alt=""
                 data-project={project.id}
-                className="project-preview-image absolute inset-0 h-full w-full object-cover object-left-top"
-                style={{ opacity: isActive ? 1 : 0, filter: isActive ? SHARP : SOFT }}
+                className="project-preview-image absolute left-0 top-0 w-full"
+                style={{
+                  // Each screenshot keeps its own height; the frame clips it while it resizes,
+                  // so the image is revealed rather than rescaled or cropped.
+                  height: previewHeight(project.image),
+                  opacity: isActive ? 1 : 0,
+                  filter: isActive ? SHARP : SOFT,
+                }}
               />
             )
           })}

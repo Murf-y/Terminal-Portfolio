@@ -9,7 +9,7 @@ export const FEATURED_PROJECTS: FeaturedProject[] = [
     stack: ['React Native', 'Expo'],
     year: 2026,
     link: 'https://getbishara.app/',
-    image: { src: '/images/projects/bishara.png', width: 1440, height: 900 },
+    image: { src: '/images/projects/bishara.png', width: 576, height: 360 },
   },
   {
     id: 'sase',
@@ -26,7 +26,7 @@ export const FEATURED_PROJECTS: FeaturedProject[] = [
     stack: ['React', 'Cloudflare'],
     year: 2026,
     link: 'https://muleprep.pages.dev',
-    image: { src: '/images/projects/muleprep.png', width: 1195, height: 602 },
+    image: { src: '/images/projects/muleprep.jpg', width: 576, height: 290 },
   },
   {
     id: 'petale',
@@ -35,7 +35,7 @@ export const FEATURED_PROJECTS: FeaturedProject[] = [
     stack: ['React', 'Vite'],
     year: 2026,
     link: 'https://petale.live',
-    image: { src: '/images/projects/petal.png', width: 1200, height: 630 },
+    image: { src: '/images/projects/petal.jpg', width: 576, height: 302 },
   },
   {
     id: 'rukhsa',
@@ -44,7 +44,7 @@ export const FEATURED_PROJECTS: FeaturedProject[] = [
     stack: ['PWA'],
     year: 2026,
     link: 'https://drivinglb.netlify.app',
-    image: { src: '/images/projects/rukhsa.png', width: 1200, height: 680 },
+    image: { src: '/images/projects/rukhsa.png', width: 576, height: 326 },
   },
   {
     id: 'socrat',
@@ -54,7 +54,7 @@ export const FEATURED_PROJECTS: FeaturedProject[] = [
     stack: ['Next.js', 'WebRTC'],
     year: 2024,
     link: 'https://socrat.vercel.app/',
-    image: { src: '/images/projects/socrat.png', width: 1796, height: 978 },
+    image: { src: '/images/projects/socrat.png', width: 576, height: 314 },
   },
 ]
 

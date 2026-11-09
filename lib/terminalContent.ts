@@ -24,8 +24,11 @@ export const TERMINAL_ROUTES: Record<string, string> = {
   research: '/#research',
 }
 
+/** Own keys only, so `cd constructor` or `cd __proto__` cannot resolve to an inherited member. */
 export function resolveRoute(directory: string): string | undefined {
-  return TERMINAL_ROUTES[directory]
+  return Object.prototype.hasOwnProperty.call(TERMINAL_ROUTES, directory)
+    ? TERMINAL_ROUTES[directory]
+    : undefined
 }
 
 /** Greedy word wrap. A single word longer than the width stays on its own line. */

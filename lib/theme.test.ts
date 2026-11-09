@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   DEFAULT_THEME,
   THEME_ATTRIBUTE,
@@ -6,6 +6,7 @@ import {
   THEME_STORAGE_KEY,
   isTheme,
   oppositeTheme,
+  persistTheme,
   resolveTheme,
 } from '@lib/theme'
 
@@ -67,5 +68,30 @@ describe('THEME_INIT_SCRIPT', () => {
       Storage.prototype.getItem = original
     }
     expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe('dark')
+  })
+})
+
+describe('persistTheme', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('stores the choice under the key the init script reads', () => {
+    persistTheme('light')
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light')
+  })
+
+  it('swallows the DOMException private windows throw, so toggling still works', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota', 'QuotaExceededError')
+    })
+    expect(() => persistTheme('light')).not.toThrow()
+  })
+
+  it('rethrows anything else, which would be a bug rather than a storage policy', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new TypeError('unexpected')
+    })
+    expect(() => persistTheme('light')).toThrow(TypeError)
   })
 })

@@ -11,18 +11,13 @@ import { ARCHIVED_PROJECTS, FEATURED_PROJECTS } from '@content/projects'
 import { PAPERS, paperUrl } from '@content/papers'
 import { renderWithProviders } from './render'
 
-vi.mock('next/dynamic', () => ({
-  default: () => {
-    const TerminalStub = ({ onExit }: { onExit: () => void }) => (
-      <div role="dialog" aria-label="Terminal">
-        <button type="button" onClick={onExit}>
-          exit
-        </button>
-      </div>
-    )
-    return TerminalStub
-  },
-}))
+// next/dynamic would load Terminal on a later tick; resolve it to the real component up front so
+// these tests exercise the real dialog rather than a stand-in.
+vi.mock('next/dynamic', async () => {
+  const { default: Terminal } = await import('@components/Terminal')
+  return { default: () => Terminal }
+})
+vi.mock('next/router', () => ({ useRouter: () => ({ push: vi.fn() }) }))
 
 describe('Home', () => {
   it('has the sections in order, with no eyebrow labels', () => {
@@ -61,7 +56,7 @@ describe('Home', () => {
     )
     expect(screen.queryByRole('dialog', { name: 'Terminal' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Terminal mode' }))
-    expect(screen.getByRole('dialog', { name: 'Terminal' })).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Terminal' })).toHaveAttribute('aria-modal', 'true')
   })
 })
 
@@ -74,7 +69,7 @@ describe('Layout', () => {
     )
     fireEvent.click(screen.getByRole('button', { name: 'Open terminal mode' }))
     expect(document.body.style.overflow).toBe('hidden')
-    fireEvent.click(screen.getByRole('button', { name: 'exit' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close terminal' }))
     expect(screen.queryByRole('dialog', { name: 'Terminal' })).toBeNull()
     expect(document.body.style.overflow).toBe('')
   })

@@ -1,8 +1,8 @@
-import Head from 'next/head'
 import Link from 'next/link'
 import React from 'react'
 import ContactLinks from '@components/ContactLinks'
 import PageHeader from '@components/PageHeader'
+import PageMeta from '@components/PageMeta'
 import ProjectList from '@components/ProjectList'
 import Section from '@components/Section'
 import TimelineRow from '@components/TimelineRow'
@@ -17,10 +17,7 @@ export default function Home() {
 
   return (
     <>
-      <Head>
-        <title>{NAME}</title>
-        <meta name="description" content={SITE_DESCRIPTION} />
-      </Head>
+      <PageMeta title={NAME} description={SITE_DESCRIPTION} path="/" />
 
       <PageHeader />
 

@@ -1,15 +1,13 @@
-import Head from 'next/head'
 import Link from 'next/link'
 import React from 'react'
 import PageHeader from '@components/PageHeader'
+import PageMeta from '@components/PageMeta'
 import { NAME } from '@content/profile'
 
 export default function NotFound() {
   return (
     <>
-      <Head>
-        <title>{`Page not found · ${NAME}`}</title>
-      </Head>
+      <PageMeta title={`Page not found · ${NAME}`} />
 
       <PageHeader title="Page not found" />
 

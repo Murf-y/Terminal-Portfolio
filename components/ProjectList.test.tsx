@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import ProjectList from '@components/ProjectList'
 import { FeaturedProject } from '@models/project'
 import { trackProjectClick } from '@hooks/useAnalytics'
+import { MORPH_GRACE_MS } from '@lib/preview'
 
 const WIDE: FeaturedProject = {
   id: 'wide',
@@ -45,6 +46,10 @@ function placeRow(name: RegExp, offsetTop: number): HTMLElement {
 }
 
 describe('ProjectList', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('renders linked projects as links and private ones as plain rows', () => {
     renderList()
     expect(screen.getByRole('link', { name: /Wide app/ })).toHaveAttribute('href', WIDE.link)
@@ -62,7 +67,8 @@ describe('ProjectList', () => {
     renderList()
     fireEvent.mouseEnter(placeRow(/Wide app/, 0))
 
-    expect(preview()).toHaveStyle({ opacity: '1', transform: 'scale(1)', top: '8px', height: '160px' })
+    // 288 * 500 / 1000 = 144
+    expect(preview()).toHaveStyle({ opacity: '1', transform: 'scale(1)', top: '8px', height: '144px' })
     expect(preview().style.transition, 'first appearance only fades').not.toContain('top')
     expect(imageFor('wide').style.opacity).toBe('1')
     expect(imageFor('tall').style.opacity).toBe('0')
@@ -73,14 +79,22 @@ describe('ProjectList', () => {
     fireEvent.mouseEnter(placeRow(/Wide app/, 0))
     fireEvent.mouseEnter(placeRow(/Tall app/, 120))
 
-    // 320 * 1000 / 1600 = 200
-    expect(preview()).toHaveStyle({ top: '128px', height: '200px', opacity: '1' })
+    // 288 * 1000 / 1600 = 180
+    expect(preview()).toHaveStyle({ top: '128px', height: '180px', opacity: '1' })
     expect(preview().style.transition).toContain('top 260ms')
     expect(preview().style.transition).toContain('height 260ms')
     expect(imageFor('tall').style.opacity).toBe('1')
     expect(imageFor('tall').style.filter).toBe('blur(0px)')
     expect(imageFor('wide').style.opacity).toBe('0')
     expect(imageFor('wide').style.filter).toBe('blur(2px)')
+  })
+
+  it('keeps every screenshot at its own full height, so the frame clips instead of cropping', () => {
+    renderList()
+    fireEvent.mouseEnter(placeRow(/Wide app/, 0))
+    expect(imageFor('wide').style.height, 'wide image at 288px wide').toBe('144px')
+    expect(imageFor('tall').style.height, 'tall image at 288px wide').toBe('180px')
+    expect(imageFor('wide').className).not.toMatch(/object-cover|h-full|inset-0/)
   })
 
   it('hides when the pointer reaches a private project, which has no screenshot', () => {
@@ -106,10 +120,47 @@ describe('ProjectList', () => {
     expect(preview()).toHaveStyle({ opacity: '0' })
   })
 
-  it('reappearing after a hide fades in rather than sliding from the old row', () => {
+  it('morphs across a private row instead of teleporting', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    renderList()
+    fireEvent.mouseEnter(placeRow(/Wide app/, 0))
+    fireEvent.mouseEnter(screen.getByText('Private platform').parentElement!)
+    vi.advanceTimersByTime(MORPH_GRACE_MS - 60)
+    fireEvent.mouseEnter(placeRow(/Tall app/, 120))
+    expect(preview()).toHaveStyle({ opacity: '1', top: '128px' })
+    expect(preview().style.transition, 'crossing a private row').toContain('top 260ms')
+  })
+
+  it('morphs when Tab moves focus to the next row (blur and focus in one tick)', () => {
+    renderList()
+    const wide = placeRow(/Wide app/, 0)
+    const tall = placeRow(/Tall app/, 120)
+    fireEvent.focus(wide)
+    fireEvent.blur(wide)
+    fireEvent.focus(tall)
+    expect(preview()).toHaveStyle({ opacity: '1', top: '128px' })
+    expect(preview().style.transition, 'keyboard focus move').toContain('top 260ms')
+  })
+
+  it('fades in at the new row once the preview has been hidden past the grace window', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
     const { container } = renderList()
     fireEvent.mouseEnter(placeRow(/Wide app/, 0))
     fireEvent.mouseLeave(container.firstElementChild!)
+    vi.advanceTimersByTime(MORPH_GRACE_MS)
+    fireEvent.mouseEnter(placeRow(/Tall app/, 120))
+    expect(preview()).toHaveStyle({ opacity: '1', top: '128px' })
+    expect(preview().style.transition, 'reappearing after a long hide').not.toContain('top')
+  })
+
+  it('a second hide while already hidden does not restart the grace window', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const { container } = renderList()
+    const wide = placeRow(/Wide app/, 0)
+    fireEvent.focus(wide)
+    fireEvent.mouseLeave(container.firstElementChild!)
+    vi.advanceTimersByTime(MORPH_GRACE_MS)
+    fireEvent.blur(wide)
     fireEvent.mouseEnter(placeRow(/Tall app/, 120))
     expect(preview().style.transition).not.toContain('top')
   })

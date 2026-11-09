@@ -1,6 +1,6 @@
-import Head from 'next/head'
 import React from 'react'
 import PageHeader from '@components/PageHeader'
+import PageMeta from '@components/PageMeta'
 import ProjectList from '@components/ProjectList'
 import Section from '@components/Section'
 import { ARCHIVED_PROJECTS, FEATURED_PROJECTS } from '@content/projects'
@@ -10,10 +10,11 @@ import { trackProjectClick } from '@hooks/useAnalytics'
 export default function Projects() {
   return (
     <>
-      <Head>
-        <title>{`Projects · ${NAME}`}</title>
-        <meta name="description" content={`Recent and earlier projects by ${NAME}.`} />
-      </Head>
+      <PageMeta
+        title={`Projects · ${NAME}`}
+        description={`Recent and earlier projects by ${NAME}.`}
+        path="/projects"
+      />
 
       <PageHeader title="Projects" />
 

@@ -18,6 +18,18 @@ export function oppositeTheme(theme: Theme): Theme {
 }
 
 /**
+ * Saves the choice for the next visit. Storage throws a DOMException in some private windows;
+ * the choice then lasts for this page only. Any other error is a bug and propagates.
+ */
+export function persistTheme(theme: Theme): void {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme)
+  } catch (error) {
+    if (!(error instanceof DOMException)) throw error
+  }
+}
+
+/**
  * Runs in <head> before first paint so a stored light preference never flashes dark.
  * Storage can throw in private windows; the default theme applies then.
  */

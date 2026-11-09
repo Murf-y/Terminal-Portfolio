@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Contrast against --color-bg: text ≈ 12:1, muted ≈ 5:1 in both themes (WCAG AA). */
+/* Contrast against --color-bg: text ≈ 12:1, muted ≈ 5:1 in both themes (WCAG AA).
+   Terminal accent, error and title text are ≥ 4.5:1 against their terminal surfaces. */
 :root,
 [data-theme='dark'] {
   color-scheme: dark;
@@ -12,7 +13,11 @@
   --color-rule: #3a3a3e;
   --color-outline: rgba(255, 255, 255, 0.08);
   --color-accent: #2e9025;
-  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --color-error: #f87171;
+  --color-terminal-bg: #0d0d0f;
+  --color-terminal-bar: #1c1c1e;
+  --color-terminal-border: #2a2a2d;
+  --color-terminal-title: #8e8e93;
 }
 
 [data-theme='light'] {
@@ -22,7 +27,12 @@
   --color-muted: #6f6f77;
   --color-rule: #d6d6d3;
   --color-outline: rgba(0, 0, 0, 0.08);
-  --color-accent: #2e9025;
+  --color-accent: #267a1f;
+  --color-error: #b91c1c;
+  --color-terminal-bg: #f4f4f5;
+  --color-terminal-bar: #e8e8ea;
+  --color-terminal-border: #d4d4d8;
+  --color-terminal-title: #5f5f64;
 }
 
 @layer base {
@@ -118,9 +128,9 @@
   background: transparent;
 }
 .terminal-scrollbar::-webkit-scrollbar-thumb {
-  background: #3a3a3d;
+  background: var(--color-rule);
   border-radius: 3px;
 }
 .terminal-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--color-muted);
 }

@@ -1,10 +1,10 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import {
   DEFAULT_THEME,
   THEME_ATTRIBUTE,
-  THEME_STORAGE_KEY,
   Theme,
   oppositeTheme,
+  persistTheme,
   resolveTheme,
 } from '@lib/theme'
 
@@ -23,15 +23,6 @@ export function useTheme(): ThemeContextValue {
   return context
 }
 
-function persistTheme(theme: Theme) {
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, theme)
-  } catch (error) {
-    // Storage is unavailable in some private windows; the choice then lasts for this page only.
-    if (!(error instanceof DOMException)) throw error
-  }
-}
-
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(DEFAULT_THEME)
 
@@ -41,13 +32,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [])
 
   const toggle = useCallback(() => {
-    setTheme((current) => {
-      const next = oppositeTheme(current)
-      document.documentElement.setAttribute(THEME_ATTRIBUTE, next)
-      persistTheme(next)
-      return next
-    })
-  }, [])
+    const next = oppositeTheme(theme)
+    document.documentElement.setAttribute(THEME_ATTRIBUTE, next)
+    persistTheme(next)
+    setTheme(next)
+  }, [theme])
 
-  return <ThemeContext.Provider value={{ theme, toggle }}>{children}</ThemeContext.Provider>
+  const value = useMemo(() => ({ theme, toggle }), [theme, toggle])
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }

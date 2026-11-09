@@ -2,30 +2,48 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { useTheme } from '@hooks/useTheme'
 import { trackTerminalCommand } from '@hooks/useAnalytics'
-import { HEADLINE, LINKS, RESUME_PATH } from '@content/profile'
-import {
-  LS_OUTPUT,
-  OutputLine,
-  TERMINAL_ROUTES,
-  buildAbout,
-  buildContact,
-  buildHelp,
-  buildProjects,
-  buildResearch,
-  nextId,
-  resolveRoute,
-} from '@lib/terminalContent'
+import { OutputLine, nextId } from '@lib/terminalContent'
+import { interpretCommand } from '@lib/terminalCommands'
 
 /* ═══════════════════════════════════════════
    Terminal Mode — macOS-style interactive terminal
-   Draggable, resizable, theme-aware
+   Draggable, resizable, theme-aware modal dialog
    ═══════════════════════════════════════════ */
 
 /* ─── Size constraints ─── */
 const MIN_W = 400
 const MIN_H = 300
-const MAX_W_RATIO = 0.95 // % of viewport
+const MAX_W_RATIO = 0.95 // of viewport
 const MAX_H_RATIO = 0.92
+
+/* ─── Default window size ─── */
+const MOBILE_BREAKPOINT = 640
+const MOBILE_INSET = 24
+const DEFAULT_MAX_W = 860
+const DEFAULT_W_RATIO = 0.85
+const DEFAULT_MAX_H = 680
+const DEFAULT_H_RATIO = 0.8
+
+const WINDOW_TRANSITION = 'left 0.25s ease, top 0.25s ease, width 0.25s ease, height 0.25s ease'
+const DIVIDER_WIDTH = 52
+
+/** Opened pages get no handle back to this tab. */
+export const NEW_WINDOW_FEATURES = 'noopener,noreferrer'
+const FOCUSABLE_SELECTOR = 'button, input, a[href]'
+
+type Edge = 'n' | 's' | 'e' | 'w' | 'nw' | 'ne' | 'sw' | 'se'
+
+/* Edges are 6px strips inset 8px from the corners; corners are 10px squares above them. */
+const RESIZE_HANDLES: Array<{ edge: Edge; className: string }> = [
+  { edge: 'n', className: 'top-0 left-[8px] right-[8px] h-[6px] cursor-n-resize z-20' },
+  { edge: 's', className: 'bottom-0 left-[8px] right-[8px] h-[6px] cursor-s-resize z-20' },
+  { edge: 'w', className: 'top-[8px] bottom-[8px] left-0 w-[6px] cursor-w-resize z-20' },
+  { edge: 'e', className: 'top-[8px] bottom-[8px] right-0 w-[6px] cursor-e-resize z-20' },
+  { edge: 'nw', className: 'top-0 left-0 w-[10px] h-[10px] cursor-nw-resize z-30' },
+  { edge: 'ne', className: 'top-0 right-0 w-[10px] h-[10px] cursor-ne-resize z-30' },
+  { edge: 'sw', className: 'bottom-0 left-0 w-[10px] h-[10px] cursor-sw-resize z-30' },
+  { edge: 'se', className: 'bottom-0 right-0 w-[10px] h-[10px] cursor-se-resize z-30' },
+]
 
 /* ─── ASCII art header ─── */
 const ASCII_BANNER = `
@@ -36,7 +54,49 @@ const ASCII_BANNER = `
 ╚██████╗██║  ██║██║  ██║██║  ██║██████╔╝███████╗███████╗
  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝`.trim()
 
-/* ═══════════ Terminal Component ═══════════ */
+interface Size {
+  w: number
+  h: number
+}
+interface Point {
+  x: number
+  y: number
+}
+
+function defaultSize(): Size {
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  if (vw < MOBILE_BREAKPOINT) return { w: vw - MOBILE_INSET, h: vh - MOBILE_INSET }
+  return {
+    w: Math.min(DEFAULT_MAX_W, vw * DEFAULT_W_RATIO),
+    h: Math.min(vh * DEFAULT_H_RATIO, DEFAULT_MAX_H),
+  }
+}
+
+function centeredPos(size: Size): Point {
+  return { x: (window.innerWidth - size.w) / 2, y: (window.innerHeight - size.h) / 2 }
+}
+
+/** New window geometry after dragging `edge` by (dx, dy), clamped to the size limits. */
+export function resizeWindow(edge: Edge, origin: Point, size: Size, dx: number, dy: number) {
+  const maxW = window.innerWidth * MAX_W_RATIO
+  const maxH = window.innerHeight * MAX_H_RATIO
+  const clampW = (w: number) => Math.max(MIN_W, Math.min(maxW, w))
+  const clampH = (h: number) => Math.max(MIN_H, Math.min(maxH, h))
+  let { w, h } = size
+  let { x, y } = origin
+  if (edge.includes('e')) w = clampW(size.w + dx)
+  if (edge.includes('w')) {
+    w = clampW(size.w - dx)
+    x = origin.x + (size.w - w)
+  }
+  if (edge.includes('s')) h = clampH(size.h + dy)
+  if (edge.includes('n')) {
+    h = clampH(size.h - dy)
+    y = origin.y + (size.h - h)
+  }
+  return { size: { w, h }, pos: { x, y } }
+}
 
 interface TerminalProps {
   onExit: () => void
@@ -51,140 +111,68 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
   const [historyIndex, setHistoryIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const windowRef = useRef<HTMLDivElement>(null)
 
   const logoSrc = theme === 'light' ? '/images/Logo_dark.png' : '/images/Logo.png'
 
-  /* ─── Drag state ─── */
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null) // null = centered
-  const [size, setSize] = useState<{ w: number; h: number } | null>(null) // null = default
+  /* ─── Window geometry ─── */
+  const [pos, setPos] = useState<Point | null>(null) // null = centered
+  const [size, setSize] = useState<Size | null>(null) // null = default
   const [isMaximized, setIsMaximized] = useState(false)
-  const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(
-    null
-  )
-  const resizeRef = useRef<{
-    startX: number
-    startY: number
-    origW: number
-    origH: number
-    edge: string
-  } | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  /** Removes the window listeners of the drag or resize in progress, if any. */
+  const detachPointerRef = useRef<(() => void) | null>(null)
 
-  /* Compute default size */
-  const getDefaultSize = useCallback(() => {
-    const vw = typeof window !== 'undefined' ? window.innerWidth : 900
-    const vh = typeof window !== 'undefined' ? window.innerHeight : 600
-    const isMobile = vw < 640
-    return {
-      w: isMobile ? vw - 24 : Math.min(860, vw * 0.85),
-      h: isMobile ? vh - 24 : Math.min(vh * 0.8, 680),
+  const currentSize: Size = isMaximized
+    ? { w: window.innerWidth, h: window.innerHeight }
+    : size ?? defaultSize()
+  const currentPos: Point = isMaximized ? { x: 0, y: 0 } : pos ?? centeredPos(currentSize)
+
+  /* Follows the pointer until mouseup; a drag still running at unmount is detached below. */
+  const trackPointer = useCallback((start: Point, onMove: (dx: number, dy: number) => void) => {
+    detachPointerRef.current?.()
+    const handleMove = (ev: MouseEvent) => onMove(ev.clientX - start.x, ev.clientY - start.y)
+    const detach = () => {
+      window.removeEventListener('mousemove', handleMove)
+      window.removeEventListener('mouseup', handleUp)
+      detachPointerRef.current = null
     }
+    const handleUp = () => {
+      detach()
+      setIsDragging(false)
+    }
+    window.addEventListener('mousemove', handleMove)
+    window.addEventListener('mouseup', handleUp)
+    detachPointerRef.current = detach
+    setIsDragging(true)
   }, [])
 
-  /* Compute centered pos */
-  const getCenteredPos = useCallback((s: { w: number; h: number }) => {
-    const vw = typeof window !== 'undefined' ? window.innerWidth : 900
-    const vh = typeof window !== 'undefined' ? window.innerHeight : 600
-    return { x: (vw - s.w) / 2, y: (vh - s.h) / 2 }
-  }, [])
+  useEffect(() => () => detachPointerRef.current?.(), [])
 
-  /* Current resolved size & pos */
-  const currentSize = isMaximized
-    ? {
-        w: typeof window !== 'undefined' ? window.innerWidth : 900,
-        h: typeof window !== 'undefined' ? window.innerHeight : 600,
-      }
-    : size || getDefaultSize()
-  const currentPos = isMaximized ? { x: 0, y: 0 } : pos || getCenteredPos(currentSize)
+  const onTitleBarMouseDown = (e: React.MouseEvent) => {
+    if (isMaximized) return
+    e.preventDefault()
+    const origin = currentPos
+    trackPointer({ x: e.clientX, y: e.clientY }, (dx, dy) =>
+      setPos({ x: origin.x + dx, y: origin.y + dy })
+    )
+  }
 
-  /* ─── Drag handlers ─── */
-  const onTitleBarMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (isMaximized) return
-      e.preventDefault()
-      const resolved = pos || getCenteredPos(size || getDefaultSize())
-      dragRef.current = {
-        startX: e.clientX,
-        startY: e.clientY,
-        origX: resolved.x,
-        origY: resolved.y,
-      }
+  const startResize = (edge: Edge, e: React.MouseEvent) => {
+    if (isMaximized) return
+    e.preventDefault()
+    e.stopPropagation()
+    const origin = currentPos
+    const originSize = currentSize
+    trackPointer({ x: e.clientX, y: e.clientY }, (dx, dy) => {
+      const next = resizeWindow(edge, origin, originSize, dx, dy)
+      setSize(next.size)
+      setPos(next.pos)
+    })
+  }
 
-      const onMove = (ev: MouseEvent) => {
-        if (!dragRef.current) return
-        const dx = ev.clientX - dragRef.current.startX
-        const dy = ev.clientY - dragRef.current.startY
-        setPos({ x: dragRef.current.origX + dx, y: dragRef.current.origY + dy })
-      }
-      const onUp = () => {
-        dragRef.current = null
-        window.removeEventListener('mousemove', onMove)
-        window.removeEventListener('mouseup', onUp)
-      }
-      window.addEventListener('mousemove', onMove)
-      window.addEventListener('mouseup', onUp)
-    },
-    [isMaximized, pos, size, getCenteredPos, getDefaultSize]
-  )
+  const toggleMaximized = useCallback(() => setIsMaximized((m) => !m), [])
 
-  /* ─── Resize handlers ─── */
-  const startResize = useCallback(
-    (edge: string, e: React.MouseEvent) => {
-      if (isMaximized) return
-      e.preventDefault()
-      e.stopPropagation()
-      const s = size || getDefaultSize()
-      resizeRef.current = { startX: e.clientX, startY: e.clientY, origW: s.w, origH: s.h, edge }
-      const resolvedPos = pos || getCenteredPos(s)
-
-      const maxW = window.innerWidth * MAX_W_RATIO
-      const maxH = window.innerHeight * MAX_H_RATIO
-
-      const onMove = (ev: MouseEvent) => {
-        if (!resizeRef.current) return
-        const dx = ev.clientX - resizeRef.current.startX
-        const dy = ev.clientY - resizeRef.current.startY
-        let newW = resizeRef.current.origW
-        let newH = resizeRef.current.origH
-        let newX = resolvedPos.x
-        let newY = resolvedPos.y
-
-        if (edge.includes('e')) newW = Math.max(MIN_W, Math.min(maxW, resizeRef.current.origW + dx))
-        if (edge.includes('w')) {
-          newW = Math.max(MIN_W, Math.min(maxW, resizeRef.current.origW - dx))
-          newX = resolvedPos.x + (resizeRef.current.origW - newW)
-        }
-        if (edge.includes('s')) newH = Math.max(MIN_H, Math.min(maxH, resizeRef.current.origH + dy))
-        if (edge.includes('n')) {
-          newH = Math.max(MIN_H, Math.min(maxH, resizeRef.current.origH - dy))
-          newY = resolvedPos.y + (resizeRef.current.origH - newH)
-        }
-
-        setSize({ w: newW, h: newH })
-        setPos({ x: newX, y: newY })
-      }
-      const onUp = () => {
-        resizeRef.current = null
-        window.removeEventListener('mousemove', onMove)
-        window.removeEventListener('mouseup', onUp)
-      }
-      window.addEventListener('mousemove', onMove)
-      window.addEventListener('mouseup', onUp)
-    },
-    [isMaximized, pos, size, getCenteredPos, getDefaultSize]
-  )
-
-  /* ─── Double-click title bar to maximize/restore ─── */
-  const onTitleBarDoubleClick = useCallback(() => {
-    setIsMaximized((m) => !m)
-  }, [])
-
-  /* ─── Green button = maximize ─── */
-  const onGreenClick = useCallback(() => {
-    setIsMaximized((m) => !m)
-  }, [])
-
-  /* Auto-run help on mount */
+  /* Welcome banner on mount */
   useEffect(() => {
     const welcome: OutputLine[] = [
       ...ASCII_BANNER.split('\n').map((line) => ({
@@ -200,6 +188,13 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
     setHistory(welcome)
   }, [])
 
+  /* Modal focus: move focus into the prompt, and hand it back to the opener on close. */
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    inputRef.current?.focus()
+    return () => opener?.focus()
+  }, [])
+
   /* Scroll to bottom on new output */
   useEffect(() => {
     if (scrollRef.current) {
@@ -207,132 +202,40 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
     }
   }, [history])
 
-  /* Focus input on click anywhere */
   const focusInput = useCallback(() => {
     inputRef.current?.focus()
   }, [])
 
   const runCommand = useCallback(
     (raw: string) => {
-      const cmd = raw.trim().toLowerCase()
-      const commandLine: OutputLine = {
-        id: nextId(),
-        type: 'command',
-        content: raw,
+      const result = interpretCommand(raw, theme)
+      const action = result.action
+      setInput('')
+      if (action?.type === 'exit') {
+        onExit()
+        return
+      }
+      if (action?.type === 'clear') {
+        setHistory([])
+        return
       }
 
-      let output: OutputLine[] = []
+      const commandLine: OutputLine = { id: nextId(), type: 'command', content: raw }
+      setHistory((h) => [...h, commandLine, ...result.output])
+      if (result.label === null) return
 
-      switch (cmd) {
-        case 'help':
-          output = buildHelp()
-          break
-        case 'cat about.md':
-          output = buildAbout()
-          break
-        case 'cat projects.md':
-          output = buildProjects()
-          break
-        case 'cat research.md':
-          output = buildResearch()
-          break
-        case 'cat contact.md':
-          output = buildContact()
-          break
-        case 'open resume':
-          window.open(RESUME_PATH, '_blank')
-          output = [{ id: nextId(), type: 'output', content: '  Opening resume.pdf...' }]
-          break
-        case 'open github':
-          window.open(LINKS.github, '_blank')
-          output = [{ id: nextId(), type: 'output', content: '  Opening github.com/Murf-y...' }]
-          break
-        case 'theme':
-          toggle()
-          output = [
-            {
-              id: nextId(),
-              type: 'output',
-              content: `  Switched to ${theme === 'dark' ? 'light' : 'dark'} mode.`,
-            },
-          ]
-          break
-        case 'clear':
-          setHistory([])
-          setInput('')
-          return
-        case 'exit':
-          onExit()
-          return
-        default:
-          if (cmd.startsWith('cd ')) {
-            const dir = cmd.replace('cd ', '')
-            const route = resolveRoute(dir)
-            if (route !== undefined) {
-              onExit()
-              router.push(route)
-              output = [{ id: nextId(), type: 'output', content: `  Navigating to ${route}...` }]
-            } else {
-              output = [
-                { id: nextId(), type: 'error', content: `  cd: no such directory: ${dir}` },
-                {
-                  id: nextId(),
-                  type: 'output',
-                  content: `  Try: ${Object.keys(TERMINAL_ROUTES)
-                    .map((name) => `cd ${name}`)
-                    .join(', ')}`,
-                },
-              ]
-            }
-          } else if (cmd === 'ls') {
-            output = LS_OUTPUT.map((content) => ({
-              id: nextId(),
-              type: 'output' as const,
-              content: `  ${content}`,
-            }))
-          } else if (cmd === 'pwd') {
-            output = [{ id: nextId(), type: 'output', content: '  /home/charbel' }]
-          } else if (cmd === 'whoami') {
-            output = [
-              {
-                id: nextId(),
-                type: 'output',
-                content: `  charbel — ${HEADLINE}`,
-              },
-            ]
-          } else if (cmd === 'date') {
-            output = [{ id: nextId(), type: 'output', content: `  ${new Date().toLocaleString()}` }]
-          } else if (cmd === 'echo hello' || cmd === 'echo "hello"') {
-            output = [{ id: nextId(), type: 'output', content: '  hello' }]
-          } else if (cmd.startsWith('echo ')) {
-            output = [{ id: nextId(), type: 'output', content: `  ${raw.slice(5)}` }]
-          } else if (cmd === 'sudo rm -rf /') {
-            output = [
-              { id: nextId(), type: 'error', content: '  Nice try. 🙂' },
-              { id: nextId(), type: 'output', content: '  But this portfolio is read-only.' },
-            ]
-          } else if (cmd === 'vim' || cmd === 'nano' || cmd === 'vi') {
-            output = [
-              { id: nextId(), type: 'output', content: '  Sorry, this is a read-only terminal.' },
-              { id: nextId(), type: 'output', content: '  Use "cat <file>.md" to read files.' },
-            ]
-          } else if (cmd === '') {
-            setHistory((h) => [...h, commandLine])
-            setInput('')
-            return
-          } else {
-            output = [
-              { id: nextId(), type: 'error', content: `  command not found: ${cmd}` },
-              { id: nextId(), type: 'output', content: '  Type "help" for available commands.' },
-            ]
-          }
-      }
-
-      setHistory((h) => [...h, commandLine, ...output])
       setCmdHistory((h) => [raw, ...h])
       setHistoryIndex(-1)
-      setInput('')
-      if (cmd) trackTerminalCommand(cmd)
+      trackTerminalCommand(result.label)
+
+      if (action?.type === 'navigate') {
+        onExit()
+        router.push(action.route)
+      } else if (action?.type === 'open') {
+        window.open(action.url, '_blank', NEW_WINDOW_FEATURES)
+      } else if (action?.type === 'toggle-theme') {
+        toggle()
+      }
     },
     [onExit, router, theme, toggle]
   )
@@ -363,6 +266,27 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
     }
   }
 
+  /* Escape closes; Tab and Shift+Tab cycle inside the dialog instead of reaching the page. */
+  const handleDialogKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      onExit()
+      return
+    }
+    if (e.key !== 'Tab') return
+    const focusable = Array.from(e.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
+
   const renderLine = (line: OutputLine) => {
     switch (line.type) {
       case 'command':
@@ -389,7 +313,7 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
         )
       case 'error':
         return (
-          <div key={line.id} className="text-red-400 whitespace-pre">
+          <div key={line.id} className="text-error whitespace-pre">
             {line.content}
           </div>
         )
@@ -400,7 +324,7 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
               href={line.href}
               target="_blank"
               rel="noreferrer"
-              className="text-accent/80 hover:text-accent hover:underline transition-colors duration-150 cursor-pointer"
+              className="text-accent hover:underline cursor-pointer"
             >
               {line.content}
             </a>
@@ -409,7 +333,7 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
       case 'divider':
         return (
           <div key={line.id} className="text-rule select-none my-1">
-            {'  ' + '─'.repeat(52)}
+            {'  ' + '─'.repeat(DIVIDER_WIDTH)}
           </div>
         )
       default:
@@ -421,9 +345,6 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
     }
   }
 
-  /* Resize edge size */
-  const EDGE = 6
-
   return (
     <div
       className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
@@ -434,8 +355,11 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
     >
       {/* Terminal Window */}
       <div
-        ref={windowRef}
-        className={`absolute flex flex-col overflow-hidden shadow-2xl border border-rule ${
+        role="dialog"
+        aria-modal="true"
+        aria-label="Terminal"
+        onKeyDown={handleDialogKeyDown}
+        className={`absolute flex flex-col overflow-hidden shadow-2xl border border-rule bg-terminal-bg ${
           isMaximized ? 'rounded-none' : 'rounded-xl'
         }`}
         style={{
@@ -443,65 +367,26 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
           top: currentPos.y,
           width: currentSize.w,
           height: currentSize.h,
-          background: theme === 'dark' ? '#0d0d0f' : '#f4f4f5',
-          transition:
-            isMaximized || dragRef.current || resizeRef.current
-              ? 'none'
-              : 'left 0.25s ease, top 0.25s ease, width 0.25s ease, height 0.25s ease',
+          transition: isMaximized || isDragging ? 'none' : WINDOW_TRANSITION,
         }}
       >
         {/* ─── Resize handles (8 edges) ─── */}
-        {!isMaximized && (
-          <>
-            {/* Top */}
+        {!isMaximized &&
+          RESIZE_HANDLES.map(({ edge, className }) => (
             <div
-              className="absolute top-0 left-[8px] right-[8px] h-[6px] cursor-n-resize z-20"
-              onMouseDown={(e) => startResize('n', e)}
+              key={edge}
+              data-edge={edge}
+              className={`absolute ${className}`}
+              onMouseDown={(e) => startResize(edge, e)}
             />
-            {/* Bottom */}
-            <div
-              className="absolute bottom-0 left-[8px] right-[8px] h-[6px] cursor-s-resize z-20"
-              onMouseDown={(e) => startResize('s', e)}
-            />
-            {/* Left */}
-            <div
-              className="absolute top-[8px] bottom-[8px] left-0 w-[6px] cursor-w-resize z-20"
-              onMouseDown={(e) => startResize('w', e)}
-            />
-            {/* Right */}
-            <div
-              className="absolute top-[8px] bottom-[8px] right-0 w-[6px] cursor-e-resize z-20"
-              onMouseDown={(e) => startResize('e', e)}
-            />
-            {/* Corners */}
-            <div
-              className="absolute top-0 left-0 w-[10px] h-[10px] cursor-nw-resize z-30"
-              onMouseDown={(e) => startResize('nw', e)}
-            />
-            <div
-              className="absolute top-0 right-0 w-[10px] h-[10px] cursor-ne-resize z-30"
-              onMouseDown={(e) => startResize('ne', e)}
-            />
-            <div
-              className="absolute bottom-0 left-0 w-[10px] h-[10px] cursor-sw-resize z-30"
-              onMouseDown={(e) => startResize('sw', e)}
-            />
-            <div
-              className="absolute bottom-0 right-0 w-[10px] h-[10px] cursor-se-resize z-30"
-              onMouseDown={(e) => startResize('se', e)}
-            />
-          </>
-        )}
+          ))}
 
         {/* ─── Title Bar (macOS-style) — draggable ─── */}
         <div
-          className="flex items-center justify-between px-4 py-2.5 border-b select-none flex-shrink-0 cursor-grab active:cursor-grabbing"
-          style={{
-            background: theme === 'dark' ? '#1c1c1e' : '#e8e8ea',
-            borderColor: theme === 'dark' ? '#2a2a2d' : '#d4d4d8',
-          }}
+          data-testid="terminal-title-bar"
+          className="flex items-center justify-between px-4 py-2.5 border-b border-terminal-border bg-terminal-bar select-none flex-shrink-0 cursor-grab active:cursor-grabbing"
           onMouseDown={onTitleBarMouseDown}
-          onDoubleClick={onTitleBarDoubleClick}
+          onDoubleClick={toggleMaximized}
         >
           {/* Traffic lights */}
           <div className="flex items-center gap-2" onMouseDown={(e) => e.stopPropagation()}>
@@ -522,11 +407,11 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
                 />
               </svg>
             </button>
-            <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
+            <span aria-hidden="true" className="w-3 h-3 rounded-full bg-[#febc2e]" />
             <button
-              onClick={onGreenClick}
+              onClick={toggleMaximized}
               className="w-3 h-3 rounded-full bg-[#28c840] hover:brightness-110 transition-all duration-150 group relative"
-              aria-label="Maximize terminal"
+              aria-label={isMaximized ? 'Restore terminal size' : 'Maximize terminal'}
             >
               <svg
                 className="absolute inset-0 w-3 h-3 text-[#0b5515] opacity-0 group-hover:opacity-100 transition-opacity"
@@ -540,10 +425,7 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
           {/* Tab */}
           <div className="flex items-center gap-2">
             <img src={logoSrc} alt="" className="w-4 h-4 opacity-60" />
-            <span
-              className="font-mono text-[11px] tracking-wide"
-              style={{ color: theme === 'dark' ? '#8e8e93' : '#6b6b70' }}
-            >
+            <span className="font-mono text-[11px] tracking-wide text-terminal-title">
               charbel@portfolio: ~
             </span>
           </div>
@@ -566,12 +448,12 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
             <input
               ref={inputRef}
               type="text"
+              aria-label="Terminal command"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="flex-1 bg-transparent text-text outline-none border-none font-mono text-[12px] sm:text-[13px] caret-accent placeholder:text-muted/40"
+              className="flex-1 bg-transparent text-text outline-none border-none font-mono text-[12px] sm:text-[13px] caret-accent placeholder:text-muted"
               placeholder="type a command..."
-              autoFocus
               spellCheck={false}
               autoComplete="off"
               autoCorrect="off"

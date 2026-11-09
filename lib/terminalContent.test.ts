@@ -54,15 +54,24 @@ describe('resolveRoute', () => {
 
   it('returns undefined for unknown directories', () => {
     expect(resolveRoute('etc')).toBeUndefined()
+    expect(resolveRoute('')).toBeUndefined()
   })
+
+  it.each(['constructor', '__proto__', 'toString', 'hasOwnProperty', 'valueOf'])(
+    'does not resolve the inherited object member "%s"',
+    (name) => {
+      expect(resolveRoute(name), `cd ${name}`).toBeUndefined()
+    }
+  )
 })
 
 describe('terminal files', () => {
   it('help lists cd targets and no longer mentions stack.md', () => {
-    const help = text(buildHelp())
-    expect(help).toContain('cd <page>')
-    expect(help).toContain('research')
-    expect(help).not.toContain('stack.md')
+    const lines = buildHelp().map((line) => line.content)
+    expect(lines, 'the cd row, padded to the help column').toContain(
+      '  cd <page>           Go to home, about, projects, research'
+    )
+    expect(text(buildHelp())).not.toContain('stack.md')
   })
 
   it('about.md prints every About paragraph word for word', () => {

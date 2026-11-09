@@ -14,15 +14,6 @@ export function trackOutboundClick(label: string, url: string) {
   })
 }
 
-/** Track internal navigation via CTA buttons */
-export function trackCTA(label: string, destination: string) {
-  event('cta_click', {
-    category: 'navigation',
-    label,
-    destination,
-  })
-}
-
 /** Track project card clicks */
 export function trackProjectClick(projectTitle: string, url: string) {
   event('project_click', {
@@ -77,14 +68,6 @@ export function trackContactClick(source: string) {
   event('contact_click', {
     category: 'conversion',
     label: source,
-  })
-}
-
-/** Track abstract expand on research page */
-export function trackAbstractExpand(paperTitle: string) {
-  event('abstract_expand', {
-    category: 'content',
-    label: paperTitle,
   })
 }
 

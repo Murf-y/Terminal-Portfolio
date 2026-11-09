@@ -1,31 +1,33 @@
 import '../styles/globals.css'
 import type { AppProps } from 'next/app'
-import 'nprogress/nprogress.css'
 import dynamic from 'next/dynamic'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import Layout from '@components/Layout'
+import { TerminalProvider } from '@hooks/useTerminal'
 import { ThemeProvider } from '@hooks/useTheme'
 
-/* bundle-dynamic-imports: progress bar uses window — skip SSR */
-const TopProgressBar = dynamic(() => import('@components/TopProgressBar'), {
-  ssr: false,
-})
+const sans = Inter({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-sans' })
+const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '600'], variable: '--font-mono' })
 
-/* bundle-defer-third-party: analytics is non-critical — lazy-load it */
+/* Analytics is non-critical: load it after hydration. */
 const GoogleAnalytics = dynamic(
   () => import('nextjs-google-analytics').then((mod) => mod.GoogleAnalytics),
   { ssr: false }
 )
 
-function MyApp({ Component, pageProps, router }: AppProps) {
+function App({ Component, pageProps, router }: AppProps) {
   return (
-    <ThemeProvider>
-      <TopProgressBar />
-      <Layout>
-        <Component {...pageProps} key={router.route} />
-      </Layout>
+    <div className={`${sans.variable} ${mono.variable} font-sans`}>
+      <ThemeProvider>
+        <TerminalProvider>
+          <Layout>
+            <Component {...pageProps} key={router.route} />
+          </Layout>
+        </TerminalProvider>
+      </ThemeProvider>
       <GoogleAnalytics trackPageViews />
-    </ThemeProvider>
+    </div>
   )
 }
 
-export default MyApp
+export default App

@@ -1,29 +1,24 @@
-import Head from 'next/head'
 import Link from 'next/link'
+import React from 'react'
+import PageHeader from '@components/PageHeader'
+import PageMeta from '@components/PageMeta'
+import { NAME } from '@content/profile'
 
-export default function FourOhFour(): React.ReactElement {
+export default function NotFound() {
   return (
     <>
-      <Head>
-        <title>404 — Not Found</title>
-      </Head>
+      <PageMeta title={`Page not found · ${NAME}`} />
 
-      <div className="min-h-screen flex flex-col items-center justify-center px-6">
-        <div className="text-center stagger-children">
-          <h1 className="font-display text-[clamp(7rem,22vw,16rem)] leading-none text-text tracking-tight">
-            4<span className="text-accent">0</span>4
-          </h1>
-          <p className="font-mono text-[13px] text-muted mt-6 mb-14">
-            This page doesn&apos;t exist. Maybe it never did.
-          </p>
-          <Link
-            href="/"
-            className="inline-block font-mono text-[11px] text-void bg-accent px-8 py-3 hover:opacity-80 transition-opacity duration-200 tracking-[0.2em] uppercase font-semibold"
-          >
-            Go Home
+      <PageHeader title="Page not found" />
+
+      <section className="flex flex-col gap-4">
+        <p>This page doesn’t exist. It may have moved during the redesign.</p>
+        <p>
+          <Link href="/" className="text-link">
+            Go to the home page
           </Link>
-        </div>
-      </div>
+        </p>
+      </section>
     </>
   )
 }

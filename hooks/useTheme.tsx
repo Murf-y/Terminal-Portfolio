@@ -1,50 +1,44 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-
-type Theme = 'dark' | 'light'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  DEFAULT_THEME,
+  THEME_ATTRIBUTE,
+  Theme,
+  oppositeTheme,
+  persistTheme,
+  resolveTheme,
+} from '@lib/theme'
 
 interface ThemeContextValue {
   theme: Theme
   toggle: () => void
 }
 
-const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'dark',
-  toggle: () => {},
-})
+const ThemeContext = createContext<ThemeContextValue | null>(null)
 
-export const useTheme = () => useContext(ThemeContext)
+export function useTheme(): ThemeContextValue {
+  const context = useContext(ThemeContext)
+  if (context === null) {
+    throw new Error('useTheme must be used inside <ThemeProvider>')
+  }
+  return context
+}
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('dark')
+  const [theme, setTheme] = useState<Theme>(DEFAULT_THEME)
 
-  // Read stored preference on mount
+  // THEME_INIT_SCRIPT already set the attribute before paint; adopt it so React matches the page.
   useEffect(() => {
-    const stored = localStorage.getItem('theme') as Theme | null
-    if (stored === 'light' || stored === 'dark') {
-      setTheme(stored)
-    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-      setTheme('light')
-    }
+    setTheme(resolveTheme(document.documentElement.getAttribute(THEME_ATTRIBUTE)))
   }, [])
 
-  // Apply data-theme to <html>
-  useEffect(() => {
-    const root = document.documentElement
-    // Disable all CSS transitions briefly so the swap is instant
-    root.style.setProperty('--theme-transition', 'none')
-    document.body.style.transition = 'none'
-    root.setAttribute('data-theme', theme)
-    localStorage.setItem('theme', theme)
-    // Re-enable after a frame
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        root.style.removeProperty('--theme-transition')
-        document.body.style.transition = ''
-      })
-    })
+  const toggle = useCallback(() => {
+    const next = oppositeTheme(theme)
+    document.documentElement.setAttribute(THEME_ATTRIBUTE, next)
+    persistTheme(next)
+    setTheme(next)
   }, [theme])
 
-  const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+  const value = useMemo(() => ({ theme, toggle }), [theme, toggle])
 
-  return <ThemeContext.Provider value={{ theme, toggle }}>{children}</ThemeContext.Provider>
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }

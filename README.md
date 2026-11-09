@@ -3,7 +3,7 @@
 [![Netlify Status](https://api.netlify.com/api/v1/badges/c9cce46e-0324-44ba-a696-3c52f6576ddf/deploy-status)](https://app.netlify.com/sites/murfy/deploys)
 ![BSD3 license](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)
 
-[Live Preview](https://murfy.netlify.app/)
+[Live site](https://charbelfayad.com)
 
 # Stack 📚
 

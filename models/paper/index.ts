@@ -1,10 +1,9 @@
 export interface Paper {
   title: string
+  year: number
+  venue: string
+  doi: string
   abstract: string
-  image_path?: string
-  tags?: string[]
-  paper_link?: string
-  github_link?: string
-  year?: number
-  unavailable?: boolean
+  tags: string[]
+  githubLink?: string
 }

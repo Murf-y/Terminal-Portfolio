@@ -2,23 +2,24 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { useTheme } from '@hooks/useTheme'
 import { trackTerminalCommand } from '@hooks/useAnalytics'
-import projects_json from '../public/data/projects.json'
-import papers_json from '../public/data/papers.json'
+import { HEADLINE, LINKS, RESUME_PATH } from '@content/profile'
+import {
+  LS_OUTPUT,
+  OutputLine,
+  TERMINAL_ROUTES,
+  buildAbout,
+  buildContact,
+  buildHelp,
+  buildProjects,
+  buildResearch,
+  nextId,
+  resolveRoute,
+} from '@lib/terminalContent'
 
 /* ═══════════════════════════════════════════
    Terminal Mode — macOS-style interactive terminal
    Draggable, resizable, theme-aware
    ═══════════════════════════════════════════ */
-
-interface OutputLine {
-  id: number
-  type: 'command' | 'output' | 'error' | 'ascii' | 'divider' | 'link' | 'heading'
-  content: string
-  href?: string
-}
-
-let lineIdCounter = 0
-const nextId = () => ++lineIdCounter
 
 /* ─── Size constraints ─── */
 const MIN_W = 400
@@ -34,209 +35,6 @@ const ASCII_BANNER = `
 ██║     ██╔══██║██╔══██║██╔══██╗██╔══██╗██╔══╝  ██║
 ╚██████╗██║  ██║██║  ██║██║  ██║██████╔╝███████╗███████╗
  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝`.trim()
-
-/* ─── Command definitions ─── */
-function buildHelp(): OutputLine[] {
-  return [
-    { id: nextId(), type: 'heading', content: '' },
-    { id: nextId(), type: 'output', content: '  Available commands:' },
-    { id: nextId(), type: 'output', content: '' },
-    { id: nextId(), type: 'output', content: '  help                Show this help message' },
-    { id: nextId(), type: 'output', content: '  cat about.md        About me' },
-    { id: nextId(), type: 'output', content: '  cat projects.md     List all projects' },
-    { id: nextId(), type: 'output', content: '  cat research.md     Research papers' },
-    { id: nextId(), type: 'output', content: '  cat contact.md      Contact information' },
-    { id: nextId(), type: 'output', content: '  cat stack.md        Tech stack' },
-    { id: nextId(), type: 'output', content: '  open resume         Open resume (PDF)' },
-    { id: nextId(), type: 'output', content: '  open github         Open GitHub profile' },
-    { id: nextId(), type: 'output', content: '  theme               Toggle light/dark mode' },
-    { id: nextId(), type: 'output', content: '  exit                Return to normal view' },
-    { id: nextId(), type: 'output', content: '  clear               Clear terminal' },
-    { id: nextId(), type: 'output', content: '' },
-    { id: nextId(), type: 'output', content: '  Tip: Use ↑ ↓ to cycle through command history' },
-    { id: nextId(), type: 'heading', content: '' },
-  ]
-}
-
-function buildAbout(): OutputLine[] {
-  return [
-    { id: nextId(), type: 'divider', content: '' },
-    { id: nextId(), type: 'heading', content: '  # about.md' },
-    { id: nextId(), type: 'divider', content: '' },
-    { id: nextId(), type: 'output', content: '' },
-    { id: nextId(), type: 'output', content: '  Charbel Fayad' },
-    { id: nextId(), type: 'output', content: '  Software Engineer & Researcher' },
-    { id: nextId(), type: 'output', content: '' },
-    { id: nextId(), type: 'output', content: '  Currently an Integration Engineer at Murex,' },
-    { id: nextId(), type: 'output', content: '  orchestrating 80+ internal and external systems' },
-    { id: nextId(), type: 'output', content: '  across on-prem and cloud infrastructure.' },
-    { id: nextId(), type: 'output', content: '' },
-    { id: nextId(), type: 'output', content: '  Previously interned at NinjaCO and Ajjerni,' },
-    { id: nextId(), type: 'output', content: '  building full-stack products from the ground up.' },
-    { id: nextId(), type: 'output', content: '' },
-    { id: nextId(), type: 'output', content: '  Graduated from the honors program with a' },
-    { id: nextId(), type: 'output', content: '  3.97 CGPA, High Distinction, and the Honors' },
-    { id: nextId(), type: 'output', content: '  Award in Computer Science.' },
-    { id: nextId(), type: 'output', content: '' },
-    { id: nextId(), type: 'output', content: '  I publish research in ML and adaptive systems.' },
-    { id: nextId(), type: 'output', content: '' },
-  ]
-}
-
-function buildProjects(): OutputLine[] {
-  const lines: OutputLine[] = [
-    { id: nextId(), type: 'divider', content: '' },
-    { id: nextId(), type: 'heading', content: '  # projects.md' },
-    { id: nextId(), type: 'divider', content: '' },
-    { id: nextId(), type: 'output', content: '' },
-    { id: nextId(), type: 'output', content: `  ${projects_json.projects.length} projects` },
-    { id: nextId(), type: 'output', content: '' },
-  ]
-  projects_json.projects.forEach((p, i) => {
-    const tags = p.tags.join(', ')
-    lines.push({
-      id: nextId(),
-      type: 'output',
-      content: `  ${String(i + 1).padStart(2, '0')}. ${p.title}`,
-    })
-    lines.push({
-      id: nextId(),
-      type: 'output',
-      content: `      [${tags}]`,
-    })
-    lines.push({
-      id: nextId(),
-      type: 'link',
-      content: `      → ${p.link}`,
-      href: p.link,
-    })
-    lines.push({ id: nextId(), type: 'output', content: '' })
-  })
-  return lines
-}
-
-function buildResearch(): OutputLine[] {
-  const lines: OutputLine[] = [
-    { id: nextId(), type: 'divider', content: '' },
-    { id: nextId(), type: 'heading', content: '  # research.md' },
-    { id: nextId(), type: 'divider', content: '' },
-    { id: nextId(), type: 'output', content: '' },
-    { id: nextId(), type: 'output', content: `  ${papers_json.papers.length} publications` },
-    { id: nextId(), type: 'output', content: '' },
-  ]
-  papers_json.papers.forEach((p) => {
-    lines.push({
-      id: nextId(),
-      type: 'heading',
-      content: `  ● ${p.title}`,
-    })
-    lines.push({
-      id: nextId(),
-      type: 'output',
-      content: `    Year: ${p.year}   Tags: ${p.tags.join(', ')}`,
-    })
-    // Wrap abstract nicely at ~60 chars
-    const words = p.abstract.split(' ')
-    let line = '    '
-    words.forEach((w) => {
-      if ((line + w).length > 68) {
-        lines.push({ id: nextId(), type: 'output', content: line })
-        line = '    ' + w + ' '
-      } else {
-        line += w + ' '
-      }
-    })
-    if (line.trim()) lines.push({ id: nextId(), type: 'output', content: line })
-
-    if (p.unavailable) {
-      lines.push({
-        id: nextId(),
-        type: 'output',
-        content: `    📄 Paper → unavailable (retracted by publisher)`,
-      })
-    } else {
-      lines.push({
-        id: nextId(),
-        type: 'link',
-        content: `    📄 Paper → ${p.paper_link}`,
-        href: p.paper_link,
-      })
-    }
-    if (p.github_link) {
-      lines.push({
-        id: nextId(),
-        type: 'link',
-        content: `    💻 Code  → ${p.github_link}`,
-        href: p.github_link,
-      })
-    }
-    lines.push({ id: nextId(), type: 'output', content: '' })
-  })
-  return lines
-}
-
-function buildContact(): OutputLine[] {
-  return [
-    { id: nextId(), type: 'divider', content: '' },
-    { id: nextId(), type: 'heading', content: '  # contact.md' },
-    { id: nextId(), type: 'divider', content: '' },
-    { id: nextId(), type: 'output', content: '' },
-    {
-      id: nextId(),
-      type: 'link',
-      content: '  ✉  Email         charbelfayad64@gmail.com',
-      href: 'mailto:charbelfayad64@gmail.com',
-    },
-    {
-      id: nextId(),
-      type: 'link',
-      content: '  🐙 GitHub        github.com/Murf-y',
-      href: 'https://github.com/Murf-y',
-    },
-    {
-      id: nextId(),
-      type: 'link',
-      content: '  🔬 ResearchGate  researchgate.net/profile/Charbel-Fayad',
-      href: 'https://www.researchgate.net/profile/Charbel-Fayad',
-    },
-    {
-      id: nextId(),
-      type: 'link',
-      content: '  🆔 ORCID         orcid.org/0009-0007-0529-5003',
-      href: 'https://orcid.org/my-orcid?orcid=0009-0007-0529-5003',
-    },
-    { id: nextId(), type: 'output', content: '' },
-  ]
-}
-
-function buildStack(): OutputLine[] {
-  const techs = [
-    'TypeScript',
-    'React / Next.js',
-    'Node.js / NestJs',
-    'Flutter',
-    'MuleSoft / Anypoint',
-    'MongoDB',
-    'Docker',
-    'C# / Unity',
-    'Python',
-    'Strapi',
-    'SolidJS',
-    'PostgreSQL',
-  ]
-  return [
-    { id: nextId(), type: 'divider', content: '' },
-    { id: nextId(), type: 'heading', content: '  # stack.md' },
-    { id: nextId(), type: 'divider', content: '' },
-    { id: nextId(), type: 'output', content: '' },
-    ...techs.map((t) => ({
-      id: nextId(),
-      type: 'output' as const,
-      content: `  ▸ ${t}`,
-    })),
-    { id: nextId(), type: 'output', content: '' },
-  ]
-}
 
 /* ═══════════ Terminal Component ═══════════ */
 
@@ -441,15 +239,12 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
         case 'cat contact.md':
           output = buildContact()
           break
-        case 'cat stack.md':
-          output = buildStack()
-          break
         case 'open resume':
-          window.open('/data/resume.pdf', '_blank')
+          window.open(RESUME_PATH, '_blank')
           output = [{ id: nextId(), type: 'output', content: '  Opening resume.pdf...' }]
           break
         case 'open github':
-          window.open('https://github.com/Murf-y', '_blank')
+          window.open(LINKS.github, '_blank')
           output = [{ id: nextId(), type: 'output', content: '  Opening github.com/Murf-y...' }]
           break
         case 'theme':
@@ -472,25 +267,29 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
         default:
           if (cmd.startsWith('cd ')) {
             const dir = cmd.replace('cd ', '')
-            if (['about', 'projects', 'research'].includes(dir)) {
+            const route = resolveRoute(dir)
+            if (route !== undefined) {
               onExit()
-              setTimeout(() => router.push(`/${dir}`), 100)
-              output = [{ id: nextId(), type: 'output', content: `  Navigating to /${dir}...` }]
+              router.push(route)
+              output = [{ id: nextId(), type: 'output', content: `  Navigating to ${route}...` }]
             } else {
               output = [
                 { id: nextId(), type: 'error', content: `  cd: no such directory: ${dir}` },
                 {
                   id: nextId(),
                   type: 'output',
-                  content: '  Try: cd about, cd projects, cd research',
+                  content: `  Try: ${Object.keys(TERMINAL_ROUTES)
+                    .map((name) => `cd ${name}`)
+                    .join(', ')}`,
                 },
               ]
             }
           } else if (cmd === 'ls') {
-            output = [
-              { id: nextId(), type: 'output', content: '  about.md    projects.md    research.md' },
-              { id: nextId(), type: 'output', content: '  contact.md  stack.md       resume.pdf' },
-            ]
+            output = LS_OUTPUT.map((content) => ({
+              id: nextId(),
+              type: 'output' as const,
+              content: `  ${content}`,
+            }))
           } else if (cmd === 'pwd') {
             output = [{ id: nextId(), type: 'output', content: '  /home/charbel' }]
           } else if (cmd === 'whoami') {
@@ -498,7 +297,7 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
               {
                 id: nextId(),
                 type: 'output',
-                content: '  charbel — Software Engineer & Researcher',
+                content: `  charbel — ${HEADLINE}`,
               },
             ]
           } else if (cmd === 'date') {
@@ -609,13 +408,13 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
         )
       case 'divider':
         return (
-          <div key={line.id} className="text-border select-none my-1">
+          <div key={line.id} className="text-rule select-none my-1">
             {'  ' + '─'.repeat(52)}
           </div>
         )
       default:
         return (
-          <div key={line.id} className="text-bone whitespace-pre">
+          <div key={line.id} className="min-h-[1.7em] text-text whitespace-pre">
             {line.content}
           </div>
         )
@@ -636,7 +435,7 @@ const Terminal: React.FC<TerminalProps> = ({ onExit }) => {
       {/* Terminal Window */}
       <div
         ref={windowRef}
-        className={`absolute flex flex-col overflow-hidden shadow-2xl border border-border ${
+        className={`absolute flex flex-col overflow-hidden shadow-2xl border border-rule ${
           isMaximized ? 'rounded-none' : 'rounded-xl'
         }`}
         style={{

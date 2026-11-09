@@ -1,6 +1,13 @@
 /* Theme toggling in the browser. The pure rules live in lib/theme.ts; THEME_INIT_SCRIPT has
    already applied the stored preference before this module runs. */
-import { THEME_ATTRIBUTE, type Theme, oppositeTheme, persistTheme, resolveTheme, themeToggleLabel } from '@lib/theme'
+import {
+  THEME_ATTRIBUTE,
+  type Theme,
+  oppositeTheme,
+  persistTheme,
+  resolveTheme,
+  themeToggleLabel,
+} from '@lib/theme'
 
 const TOGGLE_SELECTOR = '[data-theme-toggle]'
 

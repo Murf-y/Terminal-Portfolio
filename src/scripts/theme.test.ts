@@ -48,7 +48,10 @@ describe('initThemeToggles', () => {
   it('relabels the server-rendered toggle for a stored light preference', async () => {
     root.setAttribute(THEME_ATTRIBUTE, 'light')
     await mount(PageHeader)
-    expect(screen.getByRole('button', { name: 'Switch to light theme' }), 'server render assumes dark').toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Switch to light theme' }),
+      'server render assumes dark'
+    ).toBeInTheDocument()
     initThemeToggles()
     expect(screen.getByRole('button', { name: 'Switch to dark theme' })).toBeInTheDocument()
   })

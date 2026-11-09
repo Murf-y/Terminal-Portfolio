@@ -5,7 +5,13 @@ import About from '../src/pages/about.astro'
 import Home from '../src/pages/index.astro'
 import Projects from '../src/pages/projects.astro'
 import { PAPERS, paperUrl } from '@content/papers'
-import { ABOUT_PARAGRAPHS, CONTACT_LINKS, EXPERIENCE, NAME, SITE_DESCRIPTION } from '@content/profile'
+import {
+  ABOUT_PARAGRAPHS,
+  CONTACT_LINKS,
+  EXPERIENCE,
+  NAME,
+  SITE_DESCRIPTION,
+} from '@content/profile'
 import { ARCHIVED_PROJECTS, FEATURED_PROJECTS } from '@content/projects'
 import { DEFAULT_THEME, THEME_ATTRIBUTE, THEME_INIT_SCRIPT } from '@lib/theme'
 import { initTerminalLaunchers } from '@scripts/terminal-launcher'
@@ -20,31 +26,49 @@ describe('Base layout', () => {
     expect(page.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe(DEFAULT_THEME)
     expect(page.documentElement.getAttribute('lang')).toBe('en')
     const scripts = Array.from(page.head.querySelectorAll('script'))
-    expect(scripts[0]?.textContent, 'init script is the first script in <head>').toBe(THEME_INIT_SCRIPT)
+    expect(scripts[0]?.textContent, 'init script is the first script in <head>').toBe(
+      THEME_INIT_SCRIPT
+    )
 
     const preload = meta(page, 'link[rel="preload"][as="font"]')
     expect(preload?.getAttribute('type')).toBe('font/woff2')
     expect(preload?.hasAttribute('crossorigin')).toBe(true)
     const fontFile = preload?.getAttribute('href') ?? ''
     expect(fontFile).toMatch(/inter-latin-wght-normal.*\.woff2/)
-    const fontFaces = Array.from(page.head.querySelectorAll('style')).map((style) => style.textContent ?? '')
-    expect(fontFaces.some((css) => css.includes("font-family:'Inter Variable'") && css.includes(fontFile))).toBe(true)
+    const fontFaces = Array.from(page.head.querySelectorAll('style')).map(
+      (style) => style.textContent ?? ''
+    )
+    expect(
+      fontFaces.some(
+        (css) => css.includes("font-family:'Inter Variable'") && css.includes(fontFile)
+      )
+    ).toBe(true)
   })
 
   it('builds the canonical and Open Graph URL from the site URL and the page path', async () => {
     const page = await mountPage(About)
     expect(page.title).toBe(`About · ${NAME}`)
-    expect(meta(page, 'link[rel="canonical"]')?.getAttribute('href')).toBe('https://charbelfayad.com/about')
-    expect(meta(page, 'meta[property="og:url"]')?.getAttribute('content')).toBe('https://charbelfayad.com/about')
-    expect(meta(page, 'meta[name="description"]')?.getAttribute('content')).toBe(ABOUT_PARAGRAPHS[0])
-    expect(meta(page, 'meta[property="og:description"]')?.getAttribute('content')).toBe(ABOUT_PARAGRAPHS[0])
+    expect(meta(page, 'link[rel="canonical"]')?.getAttribute('href')).toBe(
+      'https://charbelfayad.com/about'
+    )
+    expect(meta(page, 'meta[property="og:url"]')?.getAttribute('content')).toBe(
+      'https://charbelfayad.com/about'
+    )
+    expect(meta(page, 'meta[name="description"]')?.getAttribute('content')).toBe(
+      ABOUT_PARAGRAPHS[0]
+    )
+    expect(meta(page, 'meta[property="og:description"]')?.getAttribute('content')).toBe(
+      ABOUT_PARAGRAPHS[0]
+    )
     expect(meta(page, 'meta[property="og:title"]')?.getAttribute('content')).toBe(`About · ${NAME}`)
   })
 
   it('gives Home the bare origin with a trailing slash', async () => {
     const page = await mountPage(Home)
     expect(page.title).toBe(NAME)
-    expect(meta(page, 'link[rel="canonical"]')?.getAttribute('href')).toBe('https://charbelfayad.com/')
+    expect(meta(page, 'link[rel="canonical"]')?.getAttribute('href')).toBe(
+      'https://charbelfayad.com/'
+    )
     expect(meta(page, 'meta[name="description"]')?.getAttribute('content')).toBe(SITE_DESCRIPTION)
   })
 
@@ -54,6 +78,25 @@ describe('Base layout', () => {
     expect(meta(page, 'link[rel="canonical"]')).toBeNull()
     expect(meta(page, 'meta[property="og:url"]')).toBeNull()
     expect(meta(page, 'meta[name="description"]')).toBeNull()
+  })
+})
+
+describe('prefetch', () => {
+  it.each([
+    ['Home', Home],
+    ['About', About],
+    ['Projects', Projects],
+    ['404', NotFound],
+  ])('%s prefetches internal pages and nothing else', async (_name, page) => {
+    await mountPage(page)
+    for (const link of screen.getAllByRole('link')) {
+      const href = link.getAttribute('href') ?? ''
+      const isPage = href.startsWith('/') && !href.startsWith('/data/')
+      expect(
+        link.hasAttribute('data-astro-prefetch'),
+        `${link.textContent?.trim()} -> ${href}`
+      ).toBe(isPage)
+    }
   })
 })
 
@@ -70,7 +113,10 @@ describe('Home', () => {
     for (const project of FEATURED_PROJECTS) {
       expect(within(projects).getByText(project.title)).toBeInTheDocument()
     }
-    expect(within(projects).getByRole('link', { name: 'See all projects' })).toHaveAttribute('href', '/projects')
+    expect(within(projects).getByRole('link', { name: 'See all projects' })).toHaveAttribute(
+      'href',
+      '/projects'
+    )
   })
 
   it('links each paper by DOI in the Research section (the /research redirect target)', async () => {
@@ -78,10 +124,9 @@ describe('Home', () => {
     const research = screen.getByRole('region', { name: 'Research' })
     expect(research).toHaveAttribute('id', 'research')
     for (const paper of PAPERS) {
-      expect(within(research).getByRole('link', { name: new RegExp(paper.title.slice(0, 30)) })).toHaveAttribute(
-        'href',
-        paperUrl(paper)
-      )
+      expect(
+        within(research).getByRole('link', { name: new RegExp(paper.title.slice(0, 30)) })
+      ).toHaveAttribute('href', paperUrl(paper))
     }
   })
 
@@ -100,7 +145,10 @@ describe('Home', () => {
     const elsewhere = screen.getByRole('region', { name: 'Elsewhere' })
     expect(within(elsewhere).getAllByRole('link')).toHaveLength(CONTACT_LINKS.length)
     fireEvent.click(within(elsewhere).getByRole('button', { name: 'Terminal mode' }))
-    expect(await screen.findByRole('dialog', { name: 'Terminal' })).toHaveAttribute('aria-modal', 'true')
+    expect(await screen.findByRole('dialog', { name: 'Terminal' })).toHaveAttribute(
+      'aria-modal',
+      'true'
+    )
     fireEvent.click(screen.getByRole('button', { name: 'Close terminal' }))
   })
 })

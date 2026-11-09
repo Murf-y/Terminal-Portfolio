@@ -10,7 +10,9 @@ import { ABOUT_PARAGRAPHS, NAME } from '@content/profile'
   <PageHeader title="About" />
 
   <section class="flex flex-col gap-4">
-    {ABOUT_PARAGRAPHS.map((paragraph) => <p>{paragraph}</p>)}
+    {ABOUT_PARAGRAPHS.map((paragraph) => (
+      <p>{paragraph}</p>
+    ))}
   </section>
 
   <Section id="contact" title="Contact">

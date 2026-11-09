@@ -1,6 +1,13 @@
 ---
 import type { FeaturedProject, ProjectImage } from '@models/project'
-import { IMAGE_FILTER, PREVIEW_GAP, PREVIEW_SCALE, PREVIEW_WIDTH, previewHeight, previewTransition } from '@lib/preview'
+import {
+  IMAGE_FILTER,
+  PREVIEW_GAP,
+  PREVIEW_SCALE,
+  PREVIEW_WIDTH,
+  previewHeight,
+  previewTransition,
+} from '@lib/preview'
 
 interface Props {
   projects: FeaturedProject[]
@@ -10,7 +17,8 @@ interface Props {
 
 type ProjectWithImage = FeaturedProject & { image: ProjectImage }
 
-const hasImage = (project: FeaturedProject): project is ProjectWithImage => project.image !== undefined
+const hasImage = (project: FeaturedProject): project is ProjectWithImage =>
+  project.image !== undefined
 
 const { projects, showStack = false } = Astro.props
 const withImages = projects.filter(hasImage)
@@ -19,76 +27,76 @@ const first = withImages[0]
 ---
 
 <div class="relative" data-project-list>
-  {
-    projects.map((project) => {
-      const body = (
-        <>
-          <span class="row-title block">{project.title}</span>
-          <span class="block text-muted">{project.description}</span>
-          {showStack && <span class="block text-[13px] text-muted">{[...project.stack, project.year].join(' · ')}</span>}
-        </>
-      )
-      return project.link === undefined ? (
-        <div class="py-2" data-preview-row>
-          {body}
-        </div>
-      ) : (
-        <a
-          href={project.link}
-          target="_blank"
-          rel="noreferrer"
-          class="row-link block py-2"
-          data-preview-row
-          data-project-id={hasImage(project) ? project.id : undefined}
-        >
-          {body}
-        </a>
-      )
-    })
-  }
-
-  {
-    first !== undefined && (
-      <div
-        aria-hidden="true"
-        data-project-preview
-        class="project-preview pointer-events-none absolute hidden overflow-hidden rounded-lg bg-outline preview:block"
-        style={{
-          left: `calc(100% + ${PREVIEW_GAP}px)`,
-          width: `${PREVIEW_WIDTH}px`,
-          top: '0px',
-          height: `${previewHeight(first.image)}px`,
-          opacity: '0',
-          transform: PREVIEW_SCALE.hidden,
-          transition: previewTransition(false),
-        }}
-      >
-        {withImages.map((project) => {
-          const isFirst = project.id === first.id
-          const height = previewHeight(project.image)
-          return (
-            <img
-              src={project.image.src}
-              width={project.image.width}
-              height={project.image.height}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              data-project={project.id}
-              class="project-preview-image absolute left-0 top-0 w-full"
-              style={{
-                /* Each screenshot keeps its own height; the frame clips it while it resizes,
-                   so the image is revealed rather than rescaled or cropped. */
-                height: `${height}px`,
-                opacity: isFirst ? '1' : '0',
-                filter: isFirst ? IMAGE_FILTER.active : IMAGE_FILTER.inactive,
-              }}
-            />
-          )
-        })}
-      </div>
+  {projects.map((project) => {
+    const body = (
+      <>
+        <span class="row-title block">{project.title}</span>
+        <span class="block text-muted">{project.description}</span>
+        {showStack && (
+          <span class="block text-[13px] text-muted">
+            {[...project.stack, project.year].join(' · ')}
+          </span>
+        )}
+      </>
     )
-  }
+    return project.link === undefined ? (
+      <div class="py-2" data-preview-row>
+        {body}
+      </div>
+    ) : (
+      <a
+        href={project.link}
+        target="_blank"
+        rel="noreferrer"
+        class="row-link block py-2"
+        data-preview-row
+        data-project-id={hasImage(project) ? project.id : undefined}
+      >
+        {body}
+      </a>
+    )
+  })}
+
+  {first !== undefined && (
+    <div
+      aria-hidden="true"
+      data-project-preview
+      class="project-preview pointer-events-none absolute hidden overflow-hidden rounded-lg bg-outline preview:block"
+      style={{
+        left: `calc(100% + ${PREVIEW_GAP}px)`,
+        width: `${PREVIEW_WIDTH}px`,
+        top: '0px',
+        height: `${previewHeight(first.image)}px`,
+        opacity: '0',
+        transform: PREVIEW_SCALE.hidden,
+        transition: previewTransition(false),
+      }}
+    >
+      {withImages.map((project) => {
+        const isFirst = project.id === first.id
+        const height = previewHeight(project.image)
+        return (
+          <img
+            src={project.image.src}
+            width={project.image.width}
+            height={project.image.height}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            data-project={project.id}
+            class="project-preview-image absolute left-0 top-0 w-full"
+            style={{
+              /* Each screenshot keeps its own height; the frame clips it while it resizes,
+                   so the image is revealed rather than rescaled or cropped. */
+              height: `${height}px`,
+              opacity: isFirst ? '1' : '0',
+              filter: isFirst ? IMAGE_FILTER.active : IMAGE_FILTER.inactive,
+            }}
+          />
+        )
+      })}
+    </div>
+  )}
 </div>
 
 <script>

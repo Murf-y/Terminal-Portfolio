@@ -47,8 +47,10 @@ async function mountList() {
 
 const list = () => document.querySelector<HTMLElement>('[data-project-list]')!
 const frame = () => document.querySelector<HTMLElement>('[data-project-preview]')!
-const imageFor = (id: string) => frame().querySelector<HTMLImageElement>(`img[data-project="${id}"]`)!
-const unlinkedRow = () => screen.getByText('Unlinked platform').closest<HTMLElement>('[data-preview-row]')!
+const imageFor = (id: string) =>
+  frame().querySelector<HTMLImageElement>(`img[data-project="${id}"]`)!
+const unlinkedRow = () =>
+  screen.getByText('Unlinked platform').closest<HTMLElement>('[data-preview-row]')!
 
 /** jsdom has no layout, so give rows the offsets a browser would compute. */
 function placeRow(name: RegExp, offsetTop: number): HTMLElement {
@@ -67,7 +69,12 @@ describe('initProjectPreviews', () => {
     fireEvent.mouseEnter(placeRow(/Wide app/, 0))
 
     // 288 * 500 / 1000 = 144; the top adds the row's 8px padding.
-    expect(frame()).toHaveStyle({ opacity: '1', transform: PREVIEW_SCALE.shown, top: '8px', height: '144px' })
+    expect(frame()).toHaveStyle({
+      opacity: '1',
+      transform: PREVIEW_SCALE.shown,
+      top: '8px',
+      height: '144px',
+    })
     expect(frame().style.transition, 'first appearance only fades').not.toContain('top')
     expect(imageFor('wide').style.opacity).toBe('1')
     expect(imageFor('tall').style.opacity).toBe('0')

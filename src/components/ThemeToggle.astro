@@ -5,7 +5,12 @@ import { DEFAULT_THEME, themeToggleLabel } from '@lib/theme'
    before any script runs. src/scripts/theme.ts corrects the label for a stored preference. */
 ---
 
-<button type="button" class="icon-button" aria-label={themeToggleLabel(DEFAULT_THEME)} data-theme-toggle>
+<button
+  type="button"
+  class="icon-button"
+  aria-label={themeToggleLabel(DEFAULT_THEME)}
+  data-theme-toggle
+>
   <svg
     aria-hidden="true"
     width="16"
@@ -19,9 +24,7 @@ import { DEFAULT_THEME, themeToggleLabel } from '@lib/theme'
   >
     <g class="theme-icon-sun">
       <circle cx="12" cy="12" r="4"></circle>
-      <path
-        d="M12 3v1.5M12 19.5V21M3 12h1.5M19.5 12H21M5.6 5.6l1.1 1.1M17.3 17.3l1.1 1.1M5.6 18.4l1.1-1.1M17.3 6.7l1.1-1.1"
-      ></path>
+      <path d="M12 3v1.5M12 19.5V21M3 12h1.5M19.5 12H21M5.6 5.6l1.1 1.1M17.3 17.3l1.1 1.1M5.6 18.4l1.1-1.1M17.3 6.7l1.1-1.1"></path>
     </g>
     <path class="theme-icon-moon" d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
   </svg>

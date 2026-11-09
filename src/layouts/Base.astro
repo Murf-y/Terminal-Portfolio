@@ -33,22 +33,18 @@ const FONT_FACE = `@font-face{font-family:'Inter Variable';font-style:normal;fon
     <style is:inline set:html={FONT_FACE} />
     <title>{title}</title>
     <meta property="og:title" content={title} />
-    {
-      description !== undefined && (
-        <>
-          <meta name="description" content={description} />
-          <meta property="og:description" content={description} />
-        </>
-      )
-    }
-    {
-      url !== undefined && (
-        <>
-          <link rel="canonical" href={url} />
-          <meta property="og:url" content={url} />
-        </>
-      )
-    }
+    {description !== undefined && (
+      <>
+        <meta name="description" content={description} />
+        <meta property="og:description" content={description} />
+      </>
+    )}
+    {url !== undefined && (
+      <>
+        <link rel="canonical" href={url} />
+        <meta property="og:url" content={url} />
+      </>
+    )}
   </head>
   <body class="font-sans">
     <main class="mx-auto flex min-h-screen max-w-[608px] flex-col gap-16 px-6 pb-[72px] pt-16 sm:pt-[120px]">

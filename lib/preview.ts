@@ -4,7 +4,7 @@ import type { ProjectImage } from '@models/project'
  * Width of the floating screenshot preview beside the project list, in px.
  * With PREVIEW_GAP it fits a 1280px laptop: the 560px column is centred, so the preview's
  * right edge sits at 640 + 280 + 40 + 288 = 1248px, clear of a 15px scrollbar.
- * Keep the `preview` breakpoint in tailwind.config.js in step with these two values.
+ * Keep the `preview` breakpoint in tailwind.config.cjs in step with these two values.
  */
 export const PREVIEW_WIDTH = 288
 

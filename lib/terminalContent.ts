@@ -102,10 +102,16 @@ export function buildAbout(): OutputLine[] {
 
 export function buildProjects(): OutputLine[] {
   const total = FEATURED_PROJECTS.length + ARCHIVED_PROJECTS.length
-  const lines: OutputLine[] = [...fileHeader('projects.md'), output(`${INDENT}${total} projects`), blank()]
+  const lines: OutputLine[] = [
+    ...fileHeader('projects.md'),
+    output(`${INDENT}${total} projects`),
+    blank(),
+  ]
 
   FEATURED_PROJECTS.forEach((project, index) => {
-    lines.push(output(`${INDENT}${String(index + 1).padStart(2, '0')}. ${project.title} (${project.year})`))
+    lines.push(
+      output(`${INDENT}${String(index + 1).padStart(2, '0')}. ${project.title} (${project.year})`)
+    )
     lines.push(...wrapped(project.description, NESTED_INDENT))
     lines.push(output(`${NESTED_INDENT}[${project.stack.join(', ')}]`))
     if (project.link !== undefined) {
@@ -131,7 +137,9 @@ export function buildResearch(): OutputLine[] {
   ]
   PAPERS.forEach((paper) => {
     lines.push(heading(`${INDENT}● ${paper.title}`))
-    lines.push(output(`${NESTED_INDENT}${paper.venue}, ${paper.year}. Tags: ${paper.tags.join(', ')}`))
+    lines.push(
+      output(`${NESTED_INDENT}${paper.venue}, ${paper.year}. Tags: ${paper.tags.join(', ')}`)
+    )
     lines.push(...wrapped(paper.abstract, NESTED_INDENT))
     lines.push(link(`${NESTED_INDENT}Paper → ${paperUrl(paper)}`, paperUrl(paper)))
     if (paper.githubLink !== undefined) {

@@ -39,10 +39,16 @@ const UNLINKED: FeaturedProject = {
 
 describe('Section', () => {
   it('labels the section with its heading so it is a named landmark', async () => {
-    await mount(Section, { props: { id: 'research', title: 'Research' }, slots: { default: '<p>body</p>' } })
+    await mount(Section, {
+      props: { id: 'research', title: 'Research' },
+      slots: { default: '<p>body</p>' },
+    })
     const region = screen.getByRole('region', { name: 'Research' })
     expect(region).toHaveAttribute('id', 'research')
-    expect(within(region).getByRole('heading', { level: 2 })).toHaveAttribute('id', 'research-heading')
+    expect(within(region).getByRole('heading', { level: 2 })).toHaveAttribute(
+      'id',
+      'research-heading'
+    )
     expect(region).toContainElement(screen.getByText('body'))
   })
 })
@@ -56,7 +62,10 @@ describe('TimelineRow', () => {
   })
 
   it('renders an external link with href', async () => {
-    await mount(TimelineRow, { props: { period: '2026', href: 'https://doi.org/10.1/x' }, slots: { default: 'Paper' } })
+    await mount(TimelineRow, {
+      props: { period: '2026', href: 'https://doi.org/10.1/x' },
+      slots: { default: 'Paper' },
+    })
     const link = screen.getByRole('link', { name: /Paper/ })
     expect(link).toHaveAttribute('href', 'https://doi.org/10.1/x')
     expect(link).toHaveAttribute('target', '_blank')
@@ -78,9 +87,13 @@ describe('ContactLinks', () => {
   })
 
   it('renders extra items after the links', async () => {
-    await mount(ContactLinks, { slots: { default: '<button type="button">Terminal mode</button>' } })
+    await mount(ContactLinks, {
+      slots: { default: '<button type="button">Terminal mode</button>' },
+    })
     const button = screen.getByRole('button', { name: 'Terminal mode' })
-    expect(button.previousElementSibling).toHaveTextContent(CONTACT_LINKS[CONTACT_LINKS.length - 1].label)
+    expect(button.previousElementSibling).toHaveTextContent(
+      CONTACT_LINKS[CONTACT_LINKS.length - 1].label
+    )
   })
 })
 
@@ -103,8 +116,12 @@ describe('PageHeader', () => {
     const terminal = screen.getByRole('button', { name: 'Open terminal mode' })
     expect(terminal).toHaveAttribute('data-open-terminal')
     expect(terminal).toHaveTextContent('>_')
-    expect(terminal, 'uses the system mono so pages never fetch the terminal font').toHaveClass('font-system-mono')
-    expect(screen.getByRole('button', { name: 'Switch to light theme' })).toHaveAttribute('data-theme-toggle')
+    expect(terminal, 'uses the system mono so pages never fetch the terminal font').toHaveClass(
+      'font-system-mono'
+    )
+    expect(screen.getByRole('button', { name: 'Switch to light theme' })).toHaveAttribute(
+      'data-theme-toggle'
+    )
   })
 })
 
@@ -120,7 +137,8 @@ describe('ThemeToggle', () => {
 
 describe('ProjectList', () => {
   const frame = () => document.querySelector<HTMLElement>('[data-project-preview]')
-  const imageFor = (id: string) => frame()?.querySelector<HTMLImageElement>(`img[data-project="${id}"]`)
+  const imageFor = (id: string) =>
+    frame()?.querySelector<HTMLImageElement>(`img[data-project="${id}"]`)
 
   it('renders linked projects as links and unlinked ones as plain rows', async () => {
     await mount(ProjectList, { props: { projects: [WIDE, UNLINKED, TALL] } })
@@ -131,16 +149,31 @@ describe('ProjectList', () => {
   })
 
   it('tags only rows that have a screenshot with their project id', async () => {
-    const noShot: FeaturedProject = { ...TALL, id: 'noshot', title: 'No screenshot', image: undefined }
+    const noShot: FeaturedProject = {
+      ...TALL,
+      id: 'noshot',
+      title: 'No screenshot',
+      image: undefined,
+    }
     await mount(ProjectList, { props: { projects: [WIDE, noShot] } })
-    expect(screen.getByRole('link', { name: /Wide app/ })).toHaveAttribute('data-project-id', 'wide')
-    expect(screen.getByRole('link', { name: /No screenshot/ })).not.toHaveAttribute('data-project-id')
+    expect(screen.getByRole('link', { name: /Wide app/ })).toHaveAttribute(
+      'data-project-id',
+      'wide'
+    )
+    expect(screen.getByRole('link', { name: /No screenshot/ })).not.toHaveAttribute(
+      'data-project-id'
+    )
   })
 
   it('starts the preview hidden, sized to the first screenshot', async () => {
     await mount(ProjectList, { props: { projects: [UNLINKED, WIDE, TALL] } })
     // 288 * 500 / 1000 = 144
-    expect(frame()).toHaveStyle({ opacity: '0', transform: PREVIEW_SCALE.hidden, height: '144px', width: '288px' })
+    expect(frame()).toHaveStyle({
+      opacity: '0',
+      transform: PREVIEW_SCALE.hidden,
+      height: '144px',
+      width: '288px',
+    })
     expect(frame()).toHaveAttribute('aria-hidden', 'true')
     expect(imageFor('wide')?.style.opacity).toBe('1')
     expect(imageFor('tall')?.style.opacity).toBe('0')
@@ -149,7 +182,9 @@ describe('ProjectList', () => {
   it('renders every screenshot at its own full height, lazily, with no alt text', async () => {
     await mount(ProjectList, { props: { projects: [WIDE, TALL] } })
     expect(imageFor('wide')?.style.height, 'wide image at 288px wide').toBe('144px')
-    expect(imageFor('tall')?.style.height, 'tall image at 288px wide (288 * 1000 / 1600)').toBe('180px')
+    expect(imageFor('tall')?.style.height, 'tall image at 288px wide (288 * 1000 / 1600)').toBe(
+      '180px'
+    )
     for (const id of ['wide', 'tall']) {
       expect(imageFor(id), id).toHaveAttribute('loading', 'lazy')
       expect(imageFor(id), id).toHaveAttribute('alt', '')

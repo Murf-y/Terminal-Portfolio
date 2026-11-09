@@ -1,6 +1,12 @@
 /* Floating screenshot beside the project list: follows the hovered or focused row, morphing
    between rows and fading in from hidden. Markup comes from src/components/ProjectList.astro. */
-import { IMAGE_FILTER, PREVIEW_ROW_OFFSET, PREVIEW_SCALE, previewTransition, shouldMorph } from '@lib/preview'
+import {
+  IMAGE_FILTER,
+  PREVIEW_ROW_OFFSET,
+  PREVIEW_SCALE,
+  previewTransition,
+  shouldMorph,
+} from '@lib/preview'
 
 const LIST_SELECTOR = '[data-project-list]'
 const ROW_SELECTOR = '[data-preview-row]'

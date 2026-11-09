@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LINKS, RESUME_PATH } from '@content/profile'
 import { THEME_ATTRIBUTE } from '@lib/theme'
-import { NEW_WINDOW_FEATURES, openTerminal } from '@scripts/terminal'
+import { openTerminal } from '@scripts/terminal'
 
 const WELCOME = "Welcome to Charbel Fayad's terminal."
 
@@ -32,7 +32,8 @@ describe('openTerminal', () => {
   })
   afterEach(() => {
     // Close through the UI so the module's open state resets for the next test.
-    if (queryDialog() !== null) fireEvent.click(screen.getByRole('button', { name: 'Close terminal' }))
+    if (queryDialog() !== null)
+      fireEvent.click(screen.getByRole('button', { name: 'Close terminal' }))
     vi.restoreAllMocks()
   })
 
@@ -74,14 +75,19 @@ describe('openTerminal', () => {
     openTerminal()
     await run('help')
     expect(within(dialog()).getByText('cd <page>', { exact: false })).toBeInTheDocument()
-    expect(within(dialog()).getByText('help', { selector: 'span' }), 'command echoed after the prompt').toBeInTheDocument()
+    expect(
+      within(dialog()).getByText('help', { selector: 'span' }),
+      'command echoed after the prompt'
+    ).toBeInTheDocument()
     expect(prompt()).toHaveValue('')
   })
 
   it('prints errors as error lines', async () => {
     openTerminal()
     await run('rm -rf ~')
-    expect(within(dialog()).getByText('command not found: rm -rf ~', { exact: false })).toHaveClass('text-error')
+    expect(within(dialog()).getByText('command not found: rm -rf ~', { exact: false })).toHaveClass(
+      'text-error'
+    )
   })
 
   it('renders link lines as links that open in a new tab', async () => {
@@ -104,7 +110,9 @@ describe('openTerminal', () => {
   it.each(['constructor', '__proto__'])('cd %s prints an error and stays open', async (name) => {
     openTerminal()
     await run(`cd ${name}`)
-    expect(within(dialog()).getByText(`cd: no such directory: ${name}`, { exact: false })).toBeInTheDocument()
+    expect(
+      within(dialog()).getByText(`cd: no such directory: ${name}`, { exact: false })
+    ).toBeInTheDocument()
     expect(window.location.hash).toBe('')
   })
 
@@ -113,16 +121,17 @@ describe('openTerminal', () => {
     openTerminal()
     await run('open resume')
     await run('open github')
-    expect(open).toHaveBeenNthCalledWith(1, RESUME_PATH, '_blank', NEW_WINDOW_FEATURES)
-    expect(open).toHaveBeenNthCalledWith(2, LINKS.github, '_blank', NEW_WINDOW_FEATURES)
-    expect(NEW_WINDOW_FEATURES).toBe('noopener,noreferrer')
+    expect(open).toHaveBeenNthCalledWith(1, RESUME_PATH, '_blank', 'noopener,noreferrer')
+    expect(open).toHaveBeenNthCalledWith(2, LINKS.github, '_blank', 'noopener,noreferrer')
   })
 
   it('theme toggles the page theme and swaps the logo for contrast', async () => {
     openTerminal()
     await run('theme')
     expect(document.documentElement).toHaveAttribute(THEME_ATTRIBUTE, 'light')
-    expect(within(dialog()).getByText('Switched to light mode.', { exact: false })).toBeInTheDocument()
+    expect(
+      within(dialog()).getByText('Switched to light mode.', { exact: false })
+    ).toBeInTheDocument()
     expect(logo()).toHaveAttribute('src', '/images/Logo_dark.png')
   })
 
@@ -137,7 +146,10 @@ describe('openTerminal', () => {
   it('an empty Enter prints a bare prompt and is not added to history', async () => {
     openTerminal()
     const user = await run('')
-    expect(dialog().querySelectorAll('[data-output] > .mt-1'), 'one echoed prompt line').toHaveLength(1)
+    expect(
+      dialog().querySelectorAll('[data-line="command"]'),
+      'one echoed prompt line'
+    ).toHaveLength(1)
     await user.keyboard('{ArrowUp}')
     expect(prompt()).toHaveValue('')
   })
@@ -174,10 +186,26 @@ describe('openTerminal', () => {
 
   it('clicking the backdrop closes, clicking the window does not', () => {
     openTerminal()
+    fireEvent.mouseDown(dialog())
     fireEvent.click(dialog())
     expect(queryDialog()).not.toBeNull()
-    fireEvent.click(dialog().parentElement!)
+    const backdrop = dialog().parentElement!
+    fireEvent.mouseDown(backdrop)
+    fireEvent.click(backdrop)
     expect(queryDialog()).toBeNull()
+  })
+
+  it('a resize released over the backdrop does not close the terminal', () => {
+    openTerminal()
+    const edge = dialog().querySelector('[data-edge="n"]')!
+    const backdrop = dialog().parentElement!
+    // The browser sends the click to the common ancestor of the press and release targets.
+    fireEvent.mouseDown(edge, { clientX: 400, clientY: 80 })
+    fireEvent.mouseMove(window, { clientX: 400, clientY: 600 })
+    fireEvent.mouseUp(window)
+    fireEvent.click(backdrop)
+    expect(queryDialog(), 'still open after the resize').not.toBeNull()
+    expect(geometry().height, 'clamped at the 300px minimum').toBe('300px')
   })
 
   it('clicking the terminal body focuses the prompt', () => {
@@ -230,12 +258,18 @@ describe('openTerminal', () => {
     fireEvent.mouseUp(window)
     expect(dialog().style.transition, 'easing back after the drag').toContain('left 0.25s')
     fireEvent.mouseMove(window, { clientX: 400, clientY: 400 })
-    expect(geometry(), 'stops following after mouseup').toMatchObject({ left: '132px', top: '110px' })
+    expect(geometry(), 'stops following after mouseup').toMatchObject({
+      left: '132px',
+      top: '110px',
+    })
   })
 
   it('pressing a traffic light does not start a drag', () => {
     openTerminal()
-    fireEvent.mouseDown(screen.getByRole('button', { name: 'Maximize terminal' }), { clientX: 0, clientY: 0 })
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Maximize terminal' }), {
+      clientX: 0,
+      clientY: 0,
+    })
     fireEvent.mouseMove(window, { clientX: 50, clientY: 50 })
     expect(geometry()).toMatchObject({ left: '82px', top: '80px' })
   })

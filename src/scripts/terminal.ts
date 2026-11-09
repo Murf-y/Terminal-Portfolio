@@ -2,17 +2,28 @@
    Loaded on first open by src/scripts/terminal-launcher.ts. */
 import { interpretCommand } from '@lib/terminalCommands'
 import type { OutputLine } from '@lib/terminalContent'
-import { EDGES, type Edge, type Point, type Size, centeredPos, defaultSize, resizeWindow } from '@lib/terminalWindow'
+import {
+  EDGES,
+  type Edge,
+  type Point,
+  type Size,
+  centeredPos,
+  defaultSize,
+  resizeWindow,
+} from '@lib/terminalWindow'
 import type { Theme } from '@lib/theme'
 import { currentTheme, toggleTheme } from '@scripts/theme'
 
 /** Opened pages get no handle back to this tab. */
-export const NEW_WINDOW_FEATURES = 'noopener,noreferrer'
+const NEW_WINDOW_FEATURES = 'noopener,noreferrer'
 const FOCUSABLE_SELECTOR = 'button, input, a[href]'
 const WINDOW_TRANSITION = 'left 0.25s ease, top 0.25s ease, width 0.25s ease, height 0.25s ease'
 const NO_TRANSITION = 'none'
 const DIVIDER_WIDTH = 52
 const PROMPT_SYMBOL = '❯'
+/* Shared by the live prompt and echoed command lines, so both always look the same. */
+const PROMPT_ROW_CLASS = 'mt-1 flex items-center gap-2'
+const PROMPT_SYMBOL_CLASS = 'select-none font-semibold text-accent'
 
 const LOGO_FOR_THEME: Record<Theme, string> = {
   dark: '/images/Logo.png',
@@ -81,8 +92,8 @@ const WINDOW_MARKUP = `
     <div data-terminal-body
       class="terminal-scrollbar flex-1 cursor-text overflow-y-auto overflow-x-hidden px-4 py-4 font-mono text-[12px] leading-[1.7] sm:px-5 sm:text-[13px]">
       <div data-output></div>
-      <div class="mt-1 flex items-center gap-2">
-        <span class="select-none font-semibold text-accent">${PROMPT_SYMBOL}</span>
+      <div class="${PROMPT_ROW_CLASS}">
+        <span class="${PROMPT_SYMBOL_CLASS}">${PROMPT_SYMBOL}</span>
         <input type="text" aria-label="Terminal command" placeholder="type a command..."
           spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
           class="flex-1 border-none bg-transparent font-mono text-[12px] text-text caret-accent outline-none placeholder:text-muted sm:text-[13px]" />
@@ -110,21 +121,27 @@ function div(className: string, content: string): HTMLDivElement {
   return element
 }
 
-function renderLine(line: OutputLine): HTMLElement {
+function lineElement(line: OutputLine): HTMLElement {
   switch (line.type) {
     case 'command': {
-      const row = div('mt-1 flex items-center gap-2', '')
+      const row = div(PROMPT_ROW_CLASS, '')
       row.append(
         Object.assign(document.createElement('span'), {
-          className: 'select-none font-semibold text-accent',
+          className: PROMPT_SYMBOL_CLASS,
           textContent: PROMPT_SYMBOL,
         }),
-        Object.assign(document.createElement('span'), { className: 'text-text', textContent: line.content })
+        Object.assign(document.createElement('span'), {
+          className: 'text-text',
+          textContent: line.content,
+        })
       )
       return row
     }
     case 'ascii':
-      return div('select-none whitespace-pre text-[9px] leading-[1.15] text-accent sm:text-[11px]', line.content)
+      return div(
+        'select-none whitespace-pre text-[9px] leading-[1.15] text-accent sm:text-[11px]',
+        line.content
+      )
     case 'heading':
       return div('whitespace-pre font-semibold text-accent', line.content)
     case 'error':
@@ -149,6 +166,13 @@ function renderLine(line: OutputLine): HTMLElement {
   }
 }
 
+/** One printed line, tagged with its kind in data-line. */
+function renderLine(line: OutputLine): HTMLElement {
+  const element = lineElement(line)
+  element.dataset.line = line.type
+  return element
+}
+
 const viewport = (): Size => ({ w: window.innerWidth, h: window.innerHeight })
 
 let isOpen = false
@@ -169,7 +193,10 @@ export function openTerminal(): void {
   const input = part<HTMLInputElement>(backdrop, 'input')
   const logo = part<HTMLImageElement>(backdrop, '[data-logo]')
   const maximize = part<HTMLButtonElement>(backdrop, '[data-maximize]')
-  const handles = EDGES.map((edge) => ({ edge, element: part<HTMLElement>(backdrop, `[data-edge="${edge}"]`) }))
+  const handles = EDGES.map((edge) => ({
+    edge,
+    element: part<HTMLElement>(backdrop, `[data-edge="${edge}"]`),
+  }))
 
   /* ─── Window geometry: null position and size mean centred at the default size ─── */
   let pos: Point | null = null
@@ -177,8 +204,9 @@ export function openTerminal(): void {
   let isMaximized = false
   let isDragging = false
 
-  const currentSize = (): Size => (isMaximized ? viewport() : size ?? defaultSize(viewport()))
-  const currentPos = (): Point => (isMaximized ? { x: 0, y: 0 } : pos ?? centeredPos(currentSize(), viewport()))
+  const currentSize = (): Size => (isMaximized ? viewport() : (size ?? defaultSize(viewport())))
+  const currentPos = (): Point =>
+    isMaximized ? { x: 0, y: 0 } : (pos ?? centeredPos(currentSize(), viewport()))
 
   const layout = () => {
     const { w, h } = currentSize()
@@ -236,7 +264,9 @@ export function openTerminal(): void {
   })
   titleBar.addEventListener('dblclick', toggleMaximized)
   // The traffic lights are buttons, not a drag handle.
-  part(backdrop, '[data-traffic-lights]').addEventListener('mousedown', (event) => event.stopPropagation())
+  part(backdrop, '[data-traffic-lights]').addEventListener('mousedown', (event) =>
+    event.stopPropagation()
+  )
 
   for (const { edge, element } of handles) {
     element.addEventListener('mousedown', (event) => {
@@ -335,8 +365,14 @@ export function openTerminal(): void {
     }
   })
 
+  /* Close only on a click that both starts and ends on the backdrop. A resize released past the
+     window's edge also produces a click on the backdrop, its nearest common ancestor. */
+  let pressStartedOnBackdrop = false
+  backdrop.addEventListener('mousedown', (event) => {
+    pressStartedOnBackdrop = event.target === backdrop
+  })
   backdrop.addEventListener('click', (event) => {
-    if (event.target === backdrop) close()
+    if (event.target === backdrop && pressStartedOnBackdrop) close()
   })
   body.addEventListener('click', () => input.focus())
   part(backdrop, '[data-close]').addEventListener('click', () => close())

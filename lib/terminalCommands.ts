@@ -85,7 +85,11 @@ function changeDirectory(directory: string): CommandResult {
     return {
       output: [
         fail(`cd: no such directory: ${directory}`),
-        say(`Try: ${Object.keys(TERMINAL_ROUTES).map((name) => `cd ${name}`).join(', ')}`),
+        say(
+          `Try: ${Object.keys(TERMINAL_ROUTES)
+            .map((name) => `cd ${name}`)
+            .join(', ')}`
+        ),
       ],
     }
   }

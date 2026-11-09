@@ -28,7 +28,10 @@ describe('resizeWindow', () => {
   const size = { w: 600, h: 500 }
 
   it('grows east and south without moving the window', () => {
-    expect(resizeWindow('se', origin, size, 50, 40, DESKTOP)).toEqual({ size: { w: 650, h: 540 }, pos: origin })
+    expect(resizeWindow('se', origin, size, 50, 40, DESKTOP)).toEqual({
+      size: { w: 650, h: 540 },
+      pos: origin,
+    })
   })
 
   it('growing west or north moves the opposite edge', () => {
@@ -39,14 +42,23 @@ describe('resizeWindow', () => {
   })
 
   it('an edge handle changes one dimension only', () => {
-    expect(resizeWindow('e', origin, size, 30, 999, DESKTOP)).toEqual({ size: { w: 630, h: 500 }, pos: origin })
-    expect(resizeWindow('n', origin, size, 999, -30, DESKTOP)).toEqual({ size: { w: 600, h: 530 }, pos: { x: 100, y: 70 } })
+    expect(resizeWindow('e', origin, size, 30, 999, DESKTOP)).toEqual({
+      size: { w: 630, h: 500 },
+      pos: origin,
+    })
+    expect(resizeWindow('n', origin, size, 999, -30, DESKTOP)).toEqual({
+      size: { w: 600, h: 530 },
+      pos: { x: 100, y: 70 },
+    })
   })
 
   it('clamps to the minimum size and keeps the far edge fixed', () => {
     // Shrinking west by 500 stops at MIN_SIZE.w, so x moves by only 600 - 400 = 200.
     expect(MIN_SIZE).toEqual({ w: 400, h: 300 })
-    expect(resizeWindow('w', origin, size, 500, 0, DESKTOP)).toEqual({ size: { w: 400, h: 500 }, pos: { x: 300, y: 100 } })
+    expect(resizeWindow('w', origin, size, 500, 0, DESKTOP)).toEqual({
+      size: { w: 400, h: 500 },
+      pos: { x: 300, y: 100 },
+    })
   })
 
   it('clamps to 95% x 92% of the viewport', () => {

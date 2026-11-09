@@ -6,23 +6,18 @@ interface Props {
 }
 
 const { period, href } = Astro.props
-const ROW_CLASS = 'grid grid-cols-[88px_minmax(0,1fr)] gap-4 py-1.5'
+const isLink = href !== undefined
+const Row = isLink ? 'a' : 'div'
 ---
 
-{
-  href === undefined ? (
-    <div class={ROW_CLASS}>
-      <span class="tabular-nums text-muted">{period}</span>
-      <span>
-        <slot />
-      </span>
-    </div>
-  ) : (
-    <a href={href} target="_blank" rel="noreferrer" class:list={['row-link', ROW_CLASS]}>
-      <span class="tabular-nums text-muted">{period}</span>
-      <span class="row-title">
-        <slot />
-      </span>
-    </a>
-  )
-}
+<Row
+  href={href}
+  target={isLink ? '_blank' : undefined}
+  rel={isLink ? 'noreferrer' : undefined}
+  class:list={[{ 'row-link': isLink }, 'grid grid-cols-[88px_minmax(0,1fr)] gap-4 py-1.5']}
+>
+  <span class="tabular-nums text-muted">{period}</span>
+  <span class:list={{ 'row-title': isLink }}>
+    <slot />
+  </span>
+</Row>

@@ -13,8 +13,9 @@ export default defineConfig({
     inlineStylesheets: 'always',
   },
   prefetch: {
-    // Fetch internal pages when their link is hovered or focused.
+    // Opt-in: only links marked data-astro-prefetch (internal pages) are fetched on hover or
+    // focus, so same-origin files such as the résumé PDF are never downloaded speculatively.
     defaultStrategy: 'hover',
-    prefetchAll: true,
+    prefetchAll: false,
   },
 })

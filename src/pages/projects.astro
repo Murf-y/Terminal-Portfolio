@@ -7,7 +7,11 @@ import { NAME } from '@content/profile'
 import { ARCHIVED_PROJECTS, FEATURED_PROJECTS } from '@content/projects'
 ---
 
-<Base title={`Projects · ${NAME}`} description={`Recent and earlier projects by ${NAME}.`} path="/projects">
+<Base
+  title={`Projects · ${NAME}`}
+  description={`Recent and earlier projects by ${NAME}.`}
+  path="/projects"
+>
   <PageHeader title="Projects" />
 
   <Section id="recent" title="Recent">
@@ -15,13 +19,16 @@ import { ARCHIVED_PROJECTS, FEATURED_PROJECTS } from '@content/projects'
   </Section>
 
   <Section id="earlier" title="Earlier">
-    {
-      ARCHIVED_PROJECTS.map((project) => (
-        <a href={project.link} target="_blank" rel="noreferrer" class="row-link flex justify-between gap-4 py-1.5">
-          <span class="row-title">{project.title}</span>
-          <span class="text-right text-muted">{project.stack.join(' · ')}</span>
-        </a>
-      ))
-    }
+    {ARCHIVED_PROJECTS.map((project) => (
+      <a
+        href={project.link}
+        target="_blank"
+        rel="noreferrer"
+        class="row-link flex justify-between gap-4 py-1.5"
+      >
+        <span class="row-title">{project.title}</span>
+        <span class="text-right text-muted">{project.stack.join(' · ')}</span>
+      </a>
+    ))}
   </Section>
 </Base>

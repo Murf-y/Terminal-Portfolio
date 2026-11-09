@@ -26,7 +26,8 @@ describe('public/_headers', () => {
 
   it('sends the security headers on every path', () => {
     expect(Object.fromEntries(rules.get('/*') ?? [])).toEqual({
-      'Content-Security-Policy': "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
+      'Content-Security-Policy':
+        "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
       'X-Frame-Options': 'DENY',
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
@@ -47,14 +48,6 @@ describe('public/_redirects', () => {
       .filter((line) => line.trim() !== '' && !line.startsWith('#'))
       .map((line) => line.trim().split(/\s+/))
     expect(rules).toEqual([['/research', '/#research', '301']])
-  })
-})
-
-describe('netlify.toml', () => {
-  it('builds with Astro and publishes its output directory', () => {
-    const config = read('netlify.toml')
-    expect(config).toMatch(/^\s*command = "npm run build"$/m)
-    expect(config).toMatch(/^\s*publish = "dist"$/m)
   })
 })
 

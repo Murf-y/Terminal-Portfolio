@@ -61,7 +61,10 @@ describe('interpretCommand', () => {
     (directory) => {
       const result = run(`cd ${directory}`)
       expect(result.action, `cd ${directory}`).toBeUndefined()
-      expect(result.output[0]).toMatchObject({ type: 'error', content: `  cd: no such directory: ${directory}` })
+      expect(result.output[0]).toMatchObject({
+        type: 'error',
+        content: `  cd: no such directory: ${directory}`,
+      })
       expect(result.output[1].content).toBe('  Try: cd home, cd about, cd projects, cd research')
     }
   )
@@ -76,7 +79,10 @@ describe('interpretCommand', () => {
 
   it('reports unknown input with a hint', () => {
     const result = run('rm -rf ~')
-    expect(result.output[0]).toMatchObject({ type: 'error', content: '  command not found: rm -rf ~' })
+    expect(result.output[0]).toMatchObject({
+      type: 'error',
+      content: '  command not found: rm -rf ~',
+    })
     expect(printed(result.output)[1]).toBe('  Type "help" for available commands.')
     expect(result.action).toBeUndefined()
   })

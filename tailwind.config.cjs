@@ -23,7 +23,9 @@ module.exports = {
       black: '#000000',
     },
     fontFamily: {
-      sans: ['"Inter Variable"', 'system-ui', 'sans-serif'],
+      // "Inter Fallback" (styles/globals.css) is Arial sized to Inter's metrics, so text does not
+      // shift when the web font swaps in.
+      sans: ['"Inter Variable"', '"Inter Fallback"', 'system-ui', 'sans-serif'],
       // Terminal text. Declared on every page, but browsers fetch a font only once text uses it,
       // so JetBrains Mono downloads when the terminal first opens.
       mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],

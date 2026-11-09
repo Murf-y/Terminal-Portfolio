@@ -4,7 +4,7 @@ export const SITE_URL = 'https://charbelfayad.com'
 export const SITE_DESCRIPTION =
   'Software integration engineer and Scrum Master at Murex. Projects, research and contact.'
 
-export const EMAIL = 'charbelfayad64@gmail.com'
+const EMAIL = 'charbelfayad64@gmail.com'
 export const RESUME_PATH = '/data/resume.pdf'
 
 export const LINKS = {
@@ -16,9 +16,9 @@ export const LINKS = {
   murex: 'https://www.murex.com/en',
 } as const
 
-export type ContactLinkId = 'email' | 'github' | 'linkedin' | 'orcid' | 'researchgate' | 'resume'
+type ContactLinkId = 'email' | 'github' | 'linkedin' | 'orcid' | 'researchgate' | 'resume'
 
-export interface ContactLink {
+interface ContactLink {
   id: ContactLinkId
   label: string
   href: string
@@ -43,7 +43,7 @@ export const ABOUT_PARAGRAPHS: string[] = [
   'BS Computer Science, Lebanese American University, 2024. Honors Program, High Distinction. CGPA 3.97, Major GPA 4.0.',
 ]
 
-export interface ExperienceEntry {
+interface ExperienceEntry {
   period: string
   title: string
   detail: string

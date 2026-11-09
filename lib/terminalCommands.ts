@@ -13,7 +13,7 @@ import {
 } from '@lib/terminalContent'
 
 /** Side effect the terminal performs after printing a command's output. */
-export type TerminalAction =
+type TerminalAction =
   | { type: 'clear' }
   | { type: 'exit' }
   | { type: 'navigate'; route: string }

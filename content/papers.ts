@@ -4,6 +4,7 @@ import type { Paper } from '@models/paper'
 export const PAPERS: Paper[] = [
   {
     title: 'A Scale-Free Network for Modeling a Homogeneous Ensemble',
+    authors: ['Fayad, C.', 'Eid, C.'],
     year: 2026,
     venue: 'Authorea preprint',
     doi: '10.22541/au.177187903.32641814/v1',
@@ -15,6 +16,7 @@ export const PAPERS: Paper[] = [
   {
     title:
       'Adaptive Neural Topologies: A Dynamic Approach to Learning Network Structures during Training',
+    authors: ['Fayad, C.'],
     year: 2025,
     venue: 'TechRxiv preprint',
     doi: '10.36227/techrxiv.176240389.96859753/v1',
@@ -26,6 +28,7 @@ export const PAPERS: Paper[] = [
   {
     title:
       'A Scale-Free Network-Based Genetic Algorithm with Balanced Exploration and Exploitation',
+    authors: ['Hoblos, Y.', 'Fayad, C.'],
     year: 2025,
     venue: 'engrXiv preprint',
     doi: '10.31224/5690',

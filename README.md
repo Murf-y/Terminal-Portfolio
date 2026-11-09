@@ -36,3 +36,17 @@ Content lives in `content/` (profile, projects, papers). Project screenshots in
 `public/images/projects/` ship pre-sized (at most 2x the 288px preview width); `content/content.test.ts`
 checks their declared dimensions. Netlify headers and redirects live in `public/_headers` and
 `public/_redirects`.
+
+# Résumé
+
+`public/data/resume.pdf` is generated, not edited by hand. Its wording lives in
+`scripts/resume/content.ts`; links, projects and papers come from `content/`, so the site and the
+résumé stay in sync.
+
+```sh
+npm run resume     # writes public/data/resume.pdf
+```
+
+Needs Windows with Microsoft Word and the [Inter](https://github.com/rsms/inter/releases) font
+installed: Word lays the page out and embeds the font. The script refuses to replace the PDF if
+the résumé no longer fits on one A4 page. Tests that drive Word run only on Windows.

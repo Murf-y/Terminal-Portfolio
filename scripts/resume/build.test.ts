@@ -2,23 +2,27 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { inspectPdf } from '../../tests/pdf.ts'
-import { resumeLinks } from '../../tests/resume.ts'
-import { MAX_PAGES, ResumeOverflowError, publishResume } from './build.ts'
+import { WORD_INSTALLED, WORD_TIMEOUT_MS, resumeLinks } from '../../tests/resume.ts'
+import {
+  MAX_PAGES,
+  RESUME_PDF,
+  ResumeFontError,
+  ResumeOverflowError,
+  WORD_LIST_SPACE_FONT,
+  publishResume,
+  unexpectedFonts,
+} from './build.ts'
 import { RESUME, type Resume } from './content.ts'
-import { FONT } from './document.ts'
+import { FONT, contentFingerprint } from './document.ts'
+import { inspectPdf, type PdfFont } from './pdf.ts'
 
-const WORD_TIMEOUT_MS = 120_000
-const HAS_WORD = process.platform === 'win32'
-const COMMITTED_PDF = new URL('../../public/data/resume.pdf', import.meta.url)
 /** A4 is 595.28 × 841.89 pt; Word rounds the box to twentieths of a point. */
 const A4_POINTS = { width: 595.28, height: 841.89 }
 const BOX_TOLERANCE_PT = 0.1
 const INTER_STYLES = ['Regular', 'Bold', 'Italic']
-/** Word sets the spaces after list bullets in Arial; they draw nothing. */
-const WORD_LIST_SPACE_FONT = 'ArialMT'
 /** The same content repeated until it cannot fit on one page. */
 const OVERFLOW_COPIES = 3
+const STALE_HINT = 'public/data/resume.pdf is stale: run npm run resume'
 
 /** Word normalizes link targets the way URL does, adding a slash to a bare host. */
 const asPdfLink = (href: string) => new URL(href).href
@@ -26,13 +30,13 @@ const asPdfLink = (href: string) => new URL(href).href
 function expectOnePageA4InInter(pdf: Uint8Array) {
   const facts = inspectPdf(pdf)
   expect(facts.pages).toBe(MAX_PAGES)
+  expect(facts.mediaBoxes).toHaveLength(facts.pages)
   for (const [x0, y0, x1, y1] of facts.mediaBoxes) {
     expect(Math.abs(x1 - x0 - A4_POINTS.width)).toBeLessThan(BOX_TOLERANCE_PT)
     expect(Math.abs(y1 - y0 - A4_POINTS.height)).toBeLessThan(BOX_TOLERANCE_PT)
   }
-  expect(facts.fonts.filter((font) => !font.embedded)).toEqual([])
-  const families = new Set(facts.fonts.map((font) => font.name))
-  expect(families).toEqual(
+  expect(unexpectedFonts(facts.fonts)).toEqual([])
+  expect(new Set(facts.fonts.map((font) => font.name))).toEqual(
     new Set([...INTER_STYLES.map((style) => `${FONT}-${style}`), WORD_LIST_SPACE_FONT])
   )
   return facts
@@ -40,14 +44,55 @@ function expectOnePageA4InInter(pdf: Uint8Array) {
 
 describe('public/data/resume.pdf', () => {
   it('is one A4 page set in embedded Inter, linking exactly what content.ts links', async () => {
-    const facts = expectOnePageA4InInter(await readFile(COMMITTED_PDF))
+    const facts = expectOnePageA4InInter(await readFile(RESUME_PDF))
     expect(new Set(facts.links)).toEqual(
       new Set(resumeLinks(RESUME).map((link) => asPdfLink(link.href)))
     )
   })
+
+  it('was built from the current content.ts', async () => {
+    const facts = inspectPdf(await readFile(RESUME_PDF))
+    expect(facts.keywords, STALE_HINT).toBe(contentFingerprint(RESUME))
+  })
 })
 
-describe.runIf(HAS_WORD)('publishResume', () => {
+describe('unexpectedFonts', () => {
+  const embedded = (name: string): PdfFont => ({ name, embedded: true })
+
+  it('accepts embedded Inter styles and Word’s list-space Arial', () => {
+    const fonts = [embedded('Inter-Regular'), embedded('Inter-Bold'), embedded('ArialMT')]
+    expect(unexpectedFonts(fonts)).toEqual([])
+  })
+
+  it('flags the fonts Word falls back to when Inter is missing', () => {
+    const fonts = [embedded('Inter-Bold'), embedded('Calibri'), embedded('Interstate-Regular')]
+    expect(unexpectedFonts(fonts)).toEqual([embedded('Calibri'), embedded('Interstate-Regular')])
+  })
+
+  it('flags Inter when it is not embedded', () => {
+    const notEmbedded = { name: 'Inter-Regular', embedded: false }
+    expect(unexpectedFonts([notEmbedded])).toEqual([notEmbedded])
+  })
+})
+
+describe('ResumeFontError', () => {
+  it('names each wrong font, marks the ones not embedded, and says the output was kept', () => {
+    const error = new ResumeFontError(
+      [
+        { name: 'Calibri', embedded: true },
+        { name: 'Helvetica', embedded: false },
+      ],
+      'out.pdf'
+    )
+    expect(error.name).toBe('ResumeFontError')
+    expect(error.message).toBe(
+      'Word set the résumé in Calibri, Helvetica (not embedded) instead of an embedded Inter; ' +
+        'install Inter (see README). out.pdf was left unchanged.'
+    )
+  })
+})
+
+describe.runIf(WORD_INSTALLED)('publishResume', () => {
   let workDir: string
   beforeAll(async () => {
     workDir = await mkdtemp(join(tmpdir(), 'resume-build-test-'))
@@ -61,7 +106,8 @@ describe.runIf(HAS_WORD)('publishResume', () => {
     async () => {
       const output = join(workDir, 'resume.pdf')
       expect(await publishResume(RESUME, output)).toBe(MAX_PAGES)
-      expectOnePageA4InInter(await readFile(output))
+      const facts = expectOnePageA4InInter(await readFile(output))
+      expect(facts.keywords).toBe(contentFingerprint(RESUME))
     },
     WORD_TIMEOUT_MS
   )
@@ -78,7 +124,7 @@ describe.runIf(HAS_WORD)('publishResume', () => {
       }
       const publishing = publishResume(overflowing, output)
       await expect(publishing).rejects.toThrow(ResumeOverflowError)
-      await expect(publishing).rejects.toThrow(`was left unchanged`)
+      await expect(publishing).rejects.toThrow('was left unchanged')
       expect(await readFile(output, 'utf8')).toBe(existing)
     },
     WORD_TIMEOUT_MS

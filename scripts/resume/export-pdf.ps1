@@ -7,9 +7,12 @@ $In = [System.IO.Path]::GetFullPath($In)
 $Out = [System.IO.Path]::GetFullPath($Out)
 $WD_FORMAT_PDF = 17
 $WD_STATISTIC_PAGES = 2
+$WD_ALERTS_NONE = 0
 $word = New-Object -ComObject Word.Application
-$word.Visible = $false
 try {
+  $word.Visible = $false
+  # A dialog in a hidden Word would wait forever for a click.
+  $word.DisplayAlerts = $WD_ALERTS_NONE
   $doc = $word.Documents.Open($In, $false, $true)
   try {
     $doc.SaveAs([ref]$Out, [ref]$WD_FORMAT_PDF)

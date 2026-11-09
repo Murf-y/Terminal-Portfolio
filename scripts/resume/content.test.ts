@@ -2,20 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { PAPERS, paperUrl } from '../../content/papers.ts'
 import { LINKS, SITE_URL } from '../../content/profile.ts'
 import { FEATURED_PROJECTS } from '../../content/projects.ts'
-import {
-  RESUME,
-  UnknownProjectError,
-  formatAuthors,
-  projectById,
-  yearSpan,
-  type Bullet,
-} from './content.ts'
+import { RESUME, UnknownProjectError, formatAuthors, projectById, yearSpan } from './content.ts'
+import { bulletLine } from '../../tests/resume.ts'
 
 const SASE_ID = 'sase'
 const APP_IDS = ['bishara', 'muleprep', 'petale', 'rukhsa', 'socrat']
-
-const bulletText = (bullet: Bullet) =>
-  typeof bullet === 'string' ? bullet : `${bullet.label}: ${bullet.text}`
 
 describe('projectById', () => {
   it('returns the featured project with that id', () => {
@@ -57,6 +48,10 @@ describe('yearSpan', () => {
   it('spans the earliest to the latest year, in any input order', () => {
     expect(yearSpan([2026, 2024, 2025])).toBe('2024 – 2026')
   })
+
+  it('throws RangeError for no years, rather than printing Infinity', () => {
+    expect(() => yearSpan([])).toThrow(RangeError)
+  })
 })
 
 describe('RESUME', () => {
@@ -66,8 +61,8 @@ describe('RESUME', () => {
       { label: '+961 70 353 574' },
       { label: 'charbelfayad64@gmail.com', href: LINKS.email },
       { label: 'charbelfayad.com', href: SITE_URL },
-      { label: 'LinkedIn', href: LINKS.linkedin },
       { label: 'GitHub', href: LINKS.github },
+      { label: 'LinkedIn', href: LINKS.linkedin },
       { label: 'ORCID', href: LINKS.orcid },
     ])
   })
@@ -103,7 +98,7 @@ describe('RESUME', () => {
 
   it('never calls the SASE project private or ties it to a founder', () => {
     const [sase] = RESUME.projects
-    const text = [sase.title, sase.note ?? '', ...sase.bullets.map(bulletText)].join('\n')
+    const text = [sase.title, sase.note ?? '', ...sase.bullets.map(bulletLine)].join('\n')
     expect(text).not.toMatch(/private|founder/i)
   })
 
@@ -125,7 +120,7 @@ describe('RESUME', () => {
   it('lists the degree first under education, then the activities at the school', () => {
     const [school] = RESUME.education
     expect(school.title).toBe('Lebanese American University')
-    expect(school.bullets.map(bulletText)).toEqual([
+    expect(school.bullets.map(bulletLine)).toEqual([
       'BS Computer Science, Honors Program. CGPA 3.97, Major GPA 4.0, High Distinction.',
       'Founder: Software Engineering Club (workshops and technical seminars) and Computer Science Club.',
       'Lab Instructor: Operating Systems and Computer Programming labs.',

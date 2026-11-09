@@ -1,13 +1,15 @@
 import { Packer } from 'docx'
 import JSZip from 'jszip'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { resumeLinks } from '../../tests/resume.ts'
-import { RESUME, type Bullet, type Citation, type Entry } from './content.ts'
-import { FONT, buildResume } from './document.ts'
+import { bulletLine, resumeLinks } from '../../tests/resume.ts'
+import { RESUME, type Citation, type Entry } from './content.ts'
+import { FONT, buildResume, contentFingerprint } from './document.ts'
 
 const WORD_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 const RELATIONSHIP_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 const PACKAGE_RELATIONSHIP_NS = 'http://schemas.openxmlformats.org/package/2006/relationships'
+const CORE_PROPERTIES_NS = 'http://schemas.openxmlformats.org/package/2006/metadata/core-properties'
+const HEX_FINGERPRINT = /^[0-9a-f]{16}$/
 
 /** Word's own A4 size, in twentieths of a point. */
 const A4_TWIPS = { width: '11906', height: '16838' }
@@ -20,6 +22,7 @@ interface Parts {
   styles: XMLDocument
   numbering: XMLDocument
   relationships: XMLDocument
+  core: XMLDocument
 }
 
 async function unpack(): Promise<Parts> {
@@ -34,6 +37,7 @@ async function unpack(): Promise<Parts> {
     styles: await part('word/styles.xml'),
     numbering: await part('word/numbering.xml'),
     relationships: await part('word/_rels/document.xml.rels'),
+    core: await part('docProps/core.xml'),
   }
 }
 
@@ -53,9 +57,6 @@ const runColors = (parts: Parts) =>
     text: textOf(run),
     color: attribute(elements(run, 'color')[0], 'val'),
   }))
-
-const bulletLine = (bullet: Bullet) =>
-  typeof bullet === 'string' ? bullet : `${bullet.label}: ${bullet.text}`
 
 const entryLines = (entry: Entry) => [
   `${entry.title}${entry.context === undefined ? '' : `, ${entry.context}`}\t${entry.period}`,
@@ -198,5 +199,23 @@ describe('buildResume', () => {
     expect(new Set(boldTexts)).toEqual(
       new Set([RESUME.name, ...SECTION_TITLES, PUBLICATIONS_TITLE, ...labels])
     )
+  })
+
+  it('stores the content fingerprint as the document keywords, for Word to copy into the PDF', () => {
+    const [keywords] = [...parts.core.getElementsByTagNameNS(CORE_PROPERTIES_NS, 'keywords')]
+    expect(keywords?.textContent).toBe(contentFingerprint(RESUME))
+  })
+})
+
+describe('contentFingerprint', () => {
+  it('is a short hex hash that stays the same for the same content', () => {
+    expect(contentFingerprint(RESUME)).toMatch(HEX_FINGERPRINT)
+    expect(contentFingerprint(structuredClone(RESUME))).toBe(contentFingerprint(RESUME))
+  })
+
+  it('changes when any wording changes', () => {
+    const [job] = RESUME.experience
+    const reworded = { ...RESUME, experience: [{ ...job, period: `${job.period}.` }] }
+    expect(contentFingerprint(reworded)).not.toBe(contentFingerprint(RESUME))
   })
 })

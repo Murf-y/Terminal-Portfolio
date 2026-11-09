@@ -1,7 +1,7 @@
 /* What the résumé says. Links, projects and papers come from content/, shared with the site;
    only the résumé's own wording lives here. */
 import { PAPERS, paperUrl } from '../../content/papers.ts'
-import { LINKS, SITE_URL } from '../../content/profile.ts'
+import { CONTACT_LINKS, LINKS, SITE_URL } from '../../content/profile.ts'
 import { FEATURED_PROJECTS } from '../../content/projects.ts'
 import type { FeaturedProject } from '../../models/project/index.ts'
 
@@ -65,9 +65,12 @@ export function formatAuthors(authors: string[]): string {
 
 const SITE_LABEL = new URL(SITE_URL).host
 const STACK_SEPARATOR = ' · '
+/** The profiles from content/profile.ts that the résumé's contact line links. */
+const PROFILE_IDS = new Set(['github', 'linkedin', 'orcid'])
 
 /** "2024", or "2024 – 2026" when the years differ. */
 export function yearSpan(years: number[]): string {
+  if (years.length === 0) throw new RangeError('yearSpan needs at least one year')
   const first = Math.min(...years)
   const last = Math.max(...years)
   return first === last ? String(first) : `${first} – ${last}`
@@ -105,7 +108,7 @@ const APPS: { id: string; text: string }[] = [
   { id: 'rukhsa', text: 'Multilingual PWA for Lebanese driving-theory exams.' },
   {
     id: 'socrat',
-    text: 'Open-source WebRTC platform on Next.js for virtual Socratic dialogue, with real-time participation and attendance analytics (2024).',
+    text: 'Open-source WebRTC platform on Next.js for virtual Socratic dialogue, with real-time participation and attendance analytics.',
   },
 ]
 
@@ -123,9 +126,10 @@ export const RESUME: Resume = {
     { label: '+961 70 353 574' },
     { label: LINKS.email.replace(/^mailto:/, ''), href: LINKS.email },
     { label: SITE_LABEL, href: SITE_URL },
-    { label: 'LinkedIn', href: LINKS.linkedin },
-    { label: 'GitHub', href: LINKS.github },
-    { label: 'ORCID', href: LINKS.orcid },
+    ...CONTACT_LINKS.filter((link) => PROFILE_IDS.has(link.id)).map(({ label, href }) => ({
+      label,
+      href,
+    })),
   ],
   experience: [
     {

@@ -3,14 +3,11 @@ import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
 import { Packer } from 'docx'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { inspectPdf } from '../../tests/pdf.ts'
+import { WORD_INSTALLED, WORD_TIMEOUT_MS } from '../../tests/resume.ts'
 import { RESUME } from './content.ts'
 import { buildResume } from './document.ts'
+import { inspectPdf } from './pdf.ts'
 import { PdfExportError, exportPdf, parsePageCount } from './word.ts'
-
-/** Word starts in a few seconds; a cold start on a busy machine can take far longer. */
-const WORD_TIMEOUT_MS = 120_000
-const HAS_WORD = process.platform === 'win32'
 
 describe('parsePageCount', () => {
   it('reads the count from the exporter’s "pages: N" line', () => {
@@ -34,7 +31,7 @@ describe('parsePageCount', () => {
   })
 })
 
-describe.runIf(HAS_WORD)('exportPdf', () => {
+describe.runIf(WORD_INSTALLED)('exportPdf', () => {
   let workDir: string
   let docx: string
   beforeAll(async () => {
@@ -65,6 +62,18 @@ describe.runIf(HAS_WORD)('exportPdf', () => {
       const pages = await exportPdf(toPosix(relative(process.cwd(), docx)), toPosix(pdf))
       expect(pages).toBe(1)
       expect(inspectPdf(await readFile(pdf)).pages).toBe(1)
+    },
+    WORD_TIMEOUT_MS
+  )
+
+  it(
+    'throws PdfExportError, with Word’s error and the cause, when the export fails',
+    async () => {
+      const missing = join(workDir, 'missing.docx')
+      const exporting = exportPdf(missing, join(workDir, 'missing.pdf'))
+      await expect(exporting).rejects.toThrow(PdfExportError)
+      await expect(exporting).rejects.toThrow(`Word could not export ${missing} to PDF.`)
+      await expect(exporting).rejects.toHaveProperty('cause', expect.any(Error))
     },
     WORD_TIMEOUT_MS
   )

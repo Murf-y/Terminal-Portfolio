@@ -1,5 +1,6 @@
 /* Lays the résumé out as a Word document: one A4 page set in Inter. Dates, tools and venues are
    muted, and space between sections and entries sets each one apart as its own block. */
+import { createHash } from 'node:crypto'
 import {
   AlignmentType,
   BorderStyle,
@@ -53,6 +54,9 @@ const SPACE = {
   afterNote: 1.5,
   afterBullet: 1,
 }
+
+/** Hex digits of the content hash kept in the document's keywords. */
+const FINGERPRINT_LENGTH = 16
 
 const BULLET_REFERENCE = 'bullet'
 const BULLET_INDENT = { left: inches(0.2), hanging: inches(0.14) }
@@ -149,6 +153,15 @@ function headerParagraphs(resume: Resume): Paragraph[] {
   ]
 }
 
+/** A short hash of the content. Stored as the document's keywords, which Word copies into the PDF,
+    so a test can tell whether the committed PDF was built from the current content. */
+export function contentFingerprint(resume: Resume): string {
+  return createHash('sha256')
+    .update(JSON.stringify(resume))
+    .digest('hex')
+    .slice(0, FINGERPRINT_LENGTH)
+}
+
 /** The résumé as a Word document, ready for Packer. */
 export function buildResume(resume: Resume): Document {
   const publicationsHeading = new Paragraph({
@@ -159,6 +172,7 @@ export function buildResume(resume: Resume): Document {
   return new Document({
     creator: resume.name,
     title: `${resume.name} — Résumé`,
+    keywords: contentFingerprint(resume),
     styles: {
       default: {
         document: {

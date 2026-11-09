@@ -1,4 +1,4 @@
-import { ProjectImage } from '@models/project'
+import type { ProjectImage } from '@models/project'
 
 /**
  * Width of the floating screenshot preview beside the project list, in px.
@@ -24,6 +24,12 @@ const EASE_OUT_STRONG = 'cubic-bezier(0.23, 1, 0.32, 1)'
  * Tab (blur then focus in the same tick) and crossing a row without a screenshot.
  */
 export const MORPH_GRACE_MS = MORPH_MS
+
+/** Frame transform while hidden and shown: it scales in slightly as it fades in. */
+export const PREVIEW_SCALE = { hidden: 'scale(0.96)', shown: 'scale(1)' } as const
+
+/** Screenshot filter: the outgoing one softens as the next crossfades in. */
+export const IMAGE_FILTER = { active: 'blur(0px)', inactive: 'blur(2px)' } as const
 
 const FADE_TRANSITION = `opacity ${FADE_MS}ms ease-out, transform ${FADE_MS}ms ease-out`
 const MORPH_TRANSITION = `top ${MORPH_MS}ms ${EASE_OUT_STRONG}, height ${MORPH_MS}ms ${EASE_OUT_STRONG}, ${FADE_TRANSITION}`

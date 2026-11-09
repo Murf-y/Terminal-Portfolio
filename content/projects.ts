@@ -1,4 +1,4 @@
-import { ArchivedProject, FeaturedProject } from '@models/project'
+import type { ArchivedProject, FeaturedProject } from '@models/project'
 
 export const FEATURED_PROJECTS: FeaturedProject[] = [
   {

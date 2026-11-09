@@ -1,14 +1,14 @@
-import react from '@vitejs/plugin-react'
-import tsconfigPaths from 'vite-tsconfig-paths'
-import { defineConfig } from 'vitest/config'
+import { getViteConfig } from 'astro/config'
 
-export default defineConfig({
-  plugins: [tsconfigPaths(), react()],
+// Astro's Vite config, so tests can render .astro components with the container API and resolve
+// the same path aliases as the site.
+export default getViteConfig({
   test: {
-    environment: 'jsdom',
+    // jsdom with the SSR transform; see tests/astro-environment.ts.
+    environment: './tests/astro-environment.ts',
     setupFiles: ['./tests/setup.ts'],
-    include: ['**/*.test.{ts,tsx}'],
-    exclude: ['node_modules', '.next', '.claude'],
+    include: ['**/*.test.ts'],
+    exclude: ['node_modules', 'dist', '.claude'],
     reporters: ['verbose'],
   },
 })

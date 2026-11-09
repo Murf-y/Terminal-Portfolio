@@ -2,15 +2,10 @@ import { ABOUT_PARAGRAPHS, CONTACT_LINKS, HEADLINE, NAME } from '@content/profil
 import { ARCHIVED_PROJECTS, FEATURED_PROJECTS } from '@content/projects'
 import { PAPERS, paperUrl } from '@content/papers'
 
-export interface OutputLine {
-  id: number
-  type: 'command' | 'output' | 'error' | 'ascii' | 'divider' | 'link' | 'heading'
-  content: string
-  href?: string
-}
-
-let lineIdCounter = 0
-export const nextId = (): number => ++lineIdCounter
+/** One printed line. Only link lines carry a target. */
+export type OutputLine =
+  | { type: 'command' | 'output' | 'error' | 'ascii' | 'divider' | 'heading'; content: string }
+  | { type: 'link'; content: string; href: string }
 
 /** Column width the terminal wraps prose to, indent included. */
 export const WRAP_WIDTH = 68
@@ -48,21 +43,16 @@ export function wrapText(text: string, width: number, indent: string): string[] 
   return lines
 }
 
-const output = (content: string): OutputLine => ({ id: nextId(), type: 'output', content })
-const link = (content: string, href: string): OutputLine => ({
-  id: nextId(),
-  type: 'link',
-  content,
-  href,
-})
-const heading = (content: string): OutputLine => ({ id: nextId(), type: 'heading', content })
+const output = (content: string): OutputLine => ({ type: 'output', content })
+const link = (content: string, href: string): OutputLine => ({ type: 'link', content, href })
+const heading = (content: string): OutputLine => ({ type: 'heading', content })
 const blank = (): OutputLine => output('')
 
 function fileHeader(fileName: string): OutputLine[] {
   return [
-    { id: nextId(), type: 'divider', content: '' },
+    { type: 'divider', content: '' },
     heading(`${INDENT}# ${fileName}`),
-    { id: nextId(), type: 'divider', content: '' },
+    { type: 'divider', content: '' },
     blank(),
   ]
 }

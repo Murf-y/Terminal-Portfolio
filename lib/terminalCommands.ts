@@ -1,19 +1,18 @@
 import { HEADLINE, LINKS, RESUME_PATH } from '@content/profile'
-import { Theme, oppositeTheme } from '@lib/theme'
+import { type Theme, oppositeTheme } from '@lib/theme'
 import {
   LS_OUTPUT,
-  OutputLine,
+  type OutputLine,
   TERMINAL_ROUTES,
   buildAbout,
   buildContact,
   buildHelp,
   buildProjects,
   buildResearch,
-  nextId,
   resolveRoute,
 } from '@lib/terminalContent'
 
-/** Side effect the terminal component performs after printing a command's output. */
+/** Side effect the terminal performs after printing a command's output. */
 export type TerminalAction =
   | { type: 'clear' }
   | { type: 'exit' }
@@ -25,24 +24,16 @@ export interface CommandResult {
   /** Lines printed after the echoed command line. */
   output: OutputLine[]
   action?: TerminalAction
-  /**
-   * What analytics may record: a command name or known route, never the visitor's free text
-   * (which may hold personal data). Null when nothing was entered.
-   */
-  label: string | null
 }
-
-/** Analytics label for input that matches no command. */
-export const UNKNOWN_COMMAND_LABEL = 'unknown'
 
 const CD_PREFIX = 'cd '
 const ECHO_PREFIX = 'echo '
 const HOME_DIRECTORY = '/home/charbel'
 
-const say = (content: string): OutputLine => ({ id: nextId(), type: 'output', content: `  ${content}` })
-const fail = (content: string): OutputLine => ({ id: nextId(), type: 'error', content: `  ${content}` })
+const say = (content: string): OutputLine => ({ type: 'output', content: `  ${content}` })
+const fail = (content: string): OutputLine => ({ type: 'error', content: `  ${content}` })
 
-type ExactCommand = (theme: Theme) => Omit<CommandResult, 'label'>
+type ExactCommand = (theme: Theme) => CommandResult
 
 const READ_ONLY_EDITOR: ExactCommand = () => ({
   output: [say('Sorry, this is a read-only terminal.'), say('Use "cat <file>.md" to read files.')],
@@ -96,33 +87,30 @@ function changeDirectory(directory: string): CommandResult {
         fail(`cd: no such directory: ${directory}`),
         say(`Try: ${Object.keys(TERMINAL_ROUTES).map((name) => `cd ${name}`).join(', ')}`),
       ],
-      label: 'cd',
     }
   }
-  return {
-    output: [say(`Navigating to ${route}...`)],
-    action: { type: 'navigate', route },
-    label: `cd ${directory}`,
-  }
+  return { output: [say(`Navigating to ${route}...`)], action: { type: 'navigate', route } }
 }
 
-/** Maps one line of terminal input to what to print and do. Matching ignores case and padding. */
-export function interpretCommand(raw: string, theme: Theme): CommandResult {
+/**
+ * Maps one line of terminal input to what to print and do. Matching ignores case and padding.
+ * Returns null for blank input, which only echoes an empty prompt.
+ */
+export function interpretCommand(raw: string, theme: Theme): CommandResult | null {
   const command = raw.trim().toLowerCase()
-  if (command === '') return { output: [], label: null }
+  if (command === '') return null
 
   const exact = EXACT_COMMANDS.get(command)
-  if (exact !== undefined) return { ...exact(theme), label: command }
+  if (exact !== undefined) return exact(theme)
 
   if (command.startsWith(CD_PREFIX)) return changeDirectory(command.slice(CD_PREFIX.length).trim())
 
   if (command.startsWith(ECHO_PREFIX)) {
     // Echo what was typed, case intact.
-    return { output: [say(raw.trim().slice(ECHO_PREFIX.length))], label: 'echo' }
+    return { output: [say(raw.trim().slice(ECHO_PREFIX.length))] }
   }
 
   return {
     output: [fail(`command not found: ${command}`), say('Type "help" for available commands.')],
-    label: UNKNOWN_COMMAND_LABEL,
   }
 }

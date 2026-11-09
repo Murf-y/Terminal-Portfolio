@@ -95,6 +95,12 @@
     color: var(--color-text);
   }
 
+  /* ThemeToggle ships both icons; show the one for the active theme. */
+  [data-theme='light'] .theme-icon-sun,
+  [data-theme='dark'] .theme-icon-moon {
+    display: none;
+  }
+
   .project-preview {
     transform-origin: left center;
     box-shadow:

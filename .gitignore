@@ -8,12 +8,9 @@
 # testing
 /coverage
 
-# next.js
-/.next/
-/out/
-
-# production
-/build
+# astro
+/dist/
+/.astro/
 
 # misc
 .DS_Store
@@ -25,12 +22,8 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# vercel
-.vercel
-
 # typescript
 *.tsbuildinfo
-next-env.d.ts
 
-# any env file (Next loads .env, .env.production, ...); none are needed by this site
+# any env file; none are needed by this site
 .env*

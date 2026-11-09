@@ -1,0 +1,68 @@
+---
+import ContactLinks from '@components/ContactLinks.astro'
+import PageHeader from '@components/PageHeader.astro'
+import ProjectList from '@components/ProjectList.astro'
+import Section from '@components/Section.astro'
+import TimelineRow from '@components/TimelineRow.astro'
+import Base from '@layouts/Base.astro'
+import { PAPERS, paperUrl } from '@content/papers'
+import { EXPERIENCE, LINKS, NAME, SITE_DESCRIPTION } from '@content/profile'
+import { FEATURED_PROJECTS } from '@content/projects'
+---
+
+<Base title={NAME} description={SITE_DESCRIPTION} path="/">
+  <PageHeader />
+
+  <section class="flex flex-col gap-4">
+    <p>
+      Software integration engineer and Scrum Master at <a
+        href={LINKS.murex}
+        target="_blank"
+        rel="noreferrer"
+        class="text-link">Murex</a
+      >. ESB, API gateway and event-driven architecture brokering real-time and async traffic across
+      hundreds of on-prem and cloud systems.
+    </p>
+    <p>
+      Outside Murex, I build things that live on the internet and serve a public good. Research in
+      evolutionary algorithms, ensemble and federated learning, through network science.
+    </p>
+    <p>
+      <a href="/about" class="text-link text-muted">More about me</a>
+    </p>
+  </section>
+
+  <Section id="projects" title="Projects">
+    <ProjectList projects={FEATURED_PROJECTS} />
+    <p class="mt-3">
+      <a href="/projects" class="text-link text-muted">See all projects</a>
+    </p>
+  </Section>
+
+  <Section id="research" title="Research">
+    {
+      PAPERS.map((paper) => (
+        <TimelineRow period={String(paper.year)} href={paperUrl(paper)}>
+          {paper.title}
+        </TimelineRow>
+      ))
+    }
+  </Section>
+
+  <Section id="experience" title="Experience">
+    {
+      EXPERIENCE.map((entry) => (
+        <TimelineRow period={entry.period}>
+          {entry.title}
+          <span class="block text-muted">{entry.detail}</span>
+        </TimelineRow>
+      ))
+    }
+  </Section>
+
+  <Section id="elsewhere" title="Elsewhere">
+    <ContactLinks>
+      <button type="button" class="text-link" data-open-terminal>Terminal mode</button>
+    </ContactLinks>
+  </Section>
+</Base>

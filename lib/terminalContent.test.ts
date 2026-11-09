@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  OutputLine,
+  type OutputLine,
   TERMINAL_ROUTES,
   WRAP_WIDTH,
   buildAbout,
@@ -16,7 +16,7 @@ import { ARCHIVED_PROJECTS, FEATURED_PROJECTS } from '@content/projects'
 import { PAPERS, paperUrl } from '@content/papers'
 
 const text = (lines: OutputLine[]) => lines.map((line) => line.content).join('\n')
-const hrefs = (lines: OutputLine[]) => lines.filter((l) => l.type === 'link').map((l) => l.href)
+const hrefs = (lines: OutputLine[]) => lines.flatMap((l) => (l.type === 'link' ? [l.href] : []))
 
 describe('wrapText', () => {
   it('keeps every line within the width, indent included', () => {
@@ -105,10 +105,5 @@ describe('terminal files', () => {
 
   it('contact.md links every contact channel', () => {
     expect(hrefs(buildContact())).toEqual(CONTACT_LINKS.map((link) => link.href))
-  })
-
-  it('gives every line a unique id so React keys never collide', () => {
-    const all = [...buildHelp(), ...buildAbout(), ...buildProjects(), ...buildResearch()]
-    expect(new Set(all.map((line) => line.id)).size).toBe(all.length)
   })
 })

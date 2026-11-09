@@ -17,6 +17,11 @@ export function oppositeTheme(theme: Theme): Theme {
   return theme === 'dark' ? 'light' : 'dark'
 }
 
+/** Accessible name of the theme toggle, which names the theme a click switches to. */
+export function themeToggleLabel(theme: Theme): string {
+  return `Switch to ${oppositeTheme(theme)} theme`
+}
+
 /**
  * Saves the choice for the next visit. Storage throws a DOMException in some private windows;
  * the choice then lasts for this page only. Any other error is a bug and propagates.
@@ -30,7 +35,7 @@ export function persistTheme(theme: Theme): void {
 }
 
 /**
- * Runs in <head> before first paint so a stored light preference never flashes dark.
+ * Runs inline in <head> before first paint so a stored light preference never flashes dark.
  * Storage can throw in private windows; the default theme applies then.
  */
 export const THEME_INIT_SCRIPT = `(function(){var t='${DEFAULT_THEME}';try{var s=localStorage.getItem('${THEME_STORAGE_KEY}');if(s==='dark'||s==='light')t=s}catch(e){}document.documentElement.setAttribute('${THEME_ATTRIBUTE}',t)})()`

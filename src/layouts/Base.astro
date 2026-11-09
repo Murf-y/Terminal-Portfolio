@@ -1,0 +1,65 @@
+---
+import '../../styles/globals.css'
+/* Terminal font. Only the terminal sets text in it, so it downloads on first open. */
+import '@fontsource/jetbrains-mono/latin-400.css'
+import '@fontsource/jetbrains-mono/latin-600.css'
+import interLatin from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url'
+import { SITE_URL } from '@content/profile'
+import { DEFAULT_THEME, THEME_INIT_SCRIPT } from '@lib/theme'
+
+interface Props {
+  title: string
+  /** Omit on pages that should not carry a search snippet, such as 404. */
+  description?: string
+  /** Site-relative path of the canonical URL, such as '/about'. Omit on pages without one. */
+  path?: string
+}
+
+const { title, description, path } = Astro.props
+const url = path === undefined ? undefined : new URL(path, SITE_URL).href
+
+/* Only the Latin subset ships; it covers every character on the site, and the browser falls back
+   per glyph for anything else. The same file is preloaded so text never waits on CSS discovery. */
+const FONT_FACE = `@font-face{font-family:'Inter Variable';font-style:normal;font-display:swap;font-weight:100 900;src:url(${interLatin}) format('woff2-variations')}`
+---
+
+<!doctype html>
+<html lang="en" data-theme={DEFAULT_THEME}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline set:html={THEME_INIT_SCRIPT} />
+    <link rel="preload" href={interLatin} as="font" type="font/woff2" crossorigin />
+    <style is:inline set:html={FONT_FACE} />
+    <title>{title}</title>
+    <meta property="og:title" content={title} />
+    {
+      description !== undefined && (
+        <>
+          <meta name="description" content={description} />
+          <meta property="og:description" content={description} />
+        </>
+      )
+    }
+    {
+      url !== undefined && (
+        <>
+          <link rel="canonical" href={url} />
+          <meta property="og:url" content={url} />
+        </>
+      )
+    }
+  </head>
+  <body class="font-sans">
+    <main class="mx-auto flex min-h-screen max-w-[608px] flex-col gap-16 px-6 pb-[72px] pt-16 sm:pt-[120px]">
+      <slot />
+    </main>
+    <script>
+      import { initTerminalLaunchers } from '@scripts/terminal-launcher'
+      import { initThemeToggles } from '@scripts/theme'
+
+      initThemeToggles()
+      initTerminalLaunchers()
+    </script>
+  </body>
+</html>

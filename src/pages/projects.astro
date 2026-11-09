@@ -1,0 +1,27 @@
+---
+import PageHeader from '@components/PageHeader.astro'
+import ProjectList from '@components/ProjectList.astro'
+import Section from '@components/Section.astro'
+import Base from '@layouts/Base.astro'
+import { NAME } from '@content/profile'
+import { ARCHIVED_PROJECTS, FEATURED_PROJECTS } from '@content/projects'
+---
+
+<Base title={`Projects · ${NAME}`} description={`Recent and earlier projects by ${NAME}.`} path="/projects">
+  <PageHeader title="Projects" />
+
+  <Section id="recent" title="Recent">
+    <ProjectList projects={FEATURED_PROJECTS} showStack />
+  </Section>
+
+  <Section id="earlier" title="Earlier">
+    {
+      ARCHIVED_PROJECTS.map((project) => (
+        <a href={project.link} target="_blank" rel="noreferrer" class="row-link flex justify-between gap-4 py-1.5">
+          <span class="row-title">{project.title}</span>
+          <span class="text-right text-muted">{project.stack.join(' · ')}</span>
+        </a>
+      ))
+    }
+  </Section>
+</Base>

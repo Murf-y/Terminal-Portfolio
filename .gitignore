@@ -28,3 +28,6 @@ yarn-error.log*
 
 # any env file; none are needed by this site
 .env*
+
+# editor settings are personal
+/.vscode/

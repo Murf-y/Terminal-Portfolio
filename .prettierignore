@@ -1,8 +1,4 @@
-dist
-.astro
-node_modules
 package-lock.json
 .claude
 skills-lock.json
 public
-.vscode

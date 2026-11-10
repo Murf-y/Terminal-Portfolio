@@ -12,12 +12,10 @@ import {
   siteEnvironment,
 } from '@lib/analytics'
 
-/** The part of the SDK this site calls; the stub queues each of them. */
-type PostHogClient = Pick<PostHog, 'init' | 'capture' | 'register'>
-
 declare global {
   interface Window {
-    posthog?: PostHogClient
+    /** The part of the SDK this site calls; the stub queues each of them. */
+    posthog?: Pick<PostHog, 'init' | 'capture' | 'register'>
   }
 }
 
@@ -25,11 +23,15 @@ const TRACKED_SELECTOR = `[${ANALYTICS_EVENT_ATTRIBUTE}]`
 /** auxclick also fires for the right button, which opens a menu rather than the link. */
 const MIDDLE_BUTTON = 1
 
-let client: PostHogClient | null = null
+let isStarted = false
 
-/** Captures a custom event. Does nothing until initAnalytics() has started PostHog. */
+/**
+ * Captures a custom event. Does nothing until initAnalytics() has started PostHog.
+ * Reads window.posthog on every call: once the SDK loads it replaces the stub there, and calls
+ * on a kept reference to the stub would queue forever and never be sent.
+ */
 export function track(event: AnalyticsEvent, properties: EventProperties = {}): void {
-  client?.capture(event, properties)
+  if (isStarted) window.posthog?.capture(event, properties)
 }
 
 /** Captures the event a tracked link declares. Middle clicks count: they open the link too. */
@@ -53,17 +55,17 @@ function captureTrackedClick(event: MouseEvent): void {
 export function initAnalytics(hostname: string): (() => void) | null {
   const environment = siteEnvironment(hostname)
   const posthog = window.posthog
-  if (environment === 'local' || posthog === undefined || client !== null) return null
+  if (environment === 'local' || posthog === undefined || isStarted) return null
 
   posthog.init(POSTHOG_PROJECT_TOKEN, posthogConfig(environment))
   posthog.register({ site_environment: environment })
-  client = posthog
+  isStarted = true
   document.addEventListener('click', captureTrackedClick)
   document.addEventListener('auxclick', captureTrackedClick)
 
   return () => {
     document.removeEventListener('click', captureTrackedClick)
     document.removeEventListener('auxclick', captureTrackedClick)
-    client = null
+    isStarted = false
   }
 }

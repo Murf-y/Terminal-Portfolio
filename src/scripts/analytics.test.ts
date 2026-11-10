@@ -1,5 +1,5 @@
 import { fireEvent } from '@testing-library/dom'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   ANALYTICS_EVENTS,
   POSTHOG_INGEST_HOST,
@@ -77,6 +77,16 @@ describe('initAnalytics', () => {
 })
 
 describe('track', () => {
+  it('sends to the SDK that replaced the stub, not to the stub it started with', () => {
+    const { posthog: stub } = startTestAnalytics()
+    // What array.js does when it arrives: window.posthog becomes the real instance.
+    const sdk = { init: vi.fn(), capture: vi.fn(), register: vi.fn() }
+    window.posthog = sdk
+    track(ANALYTICS_EVENTS.TERMINAL_OPENED)
+    expect(sdk.capture).toHaveBeenCalledWith('terminal_opened', {})
+    expect(stub.capture, 'the stale stub would never send it').not.toHaveBeenCalled()
+  })
+
   it('captures the event with its properties, defaulting to none', () => {
     const { captured } = startTestAnalytics()
     track(ANALYTICS_EVENTS.TERMINAL_OPENED)

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { PAPERS, paperUrl } from '../../content/papers.ts'
-import { LINKS, SITE_URL } from '../../content/profile.ts'
+import { LINKS } from '../../content/profile.ts'
+import { SITE_URL } from '../../content/site.ts'
 import { FEATURED_PROJECTS } from '../../content/projects.ts'
 import { RESUME, UnknownProjectError, formatAuthors, projectById, yearSpan } from './content.ts'
 import { bulletLine } from '../../tests/resume.ts'

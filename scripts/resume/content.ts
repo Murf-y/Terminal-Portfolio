@@ -1,7 +1,8 @@
 /* What the résumé says. Links, projects and papers come from content/, shared with the site;
    only the résumé's own wording lives here. */
 import { PAPERS, paperUrl } from '../../content/papers.ts'
-import { CONTACT_LINKS, LINKS, SITE_URL } from '../../content/profile.ts'
+import { CONTACT_LINKS, LINKS } from '../../content/profile.ts'
+import { SITE_URL } from '../../content/site.ts'
 import { FEATURED_PROJECTS } from '../../content/projects.ts'
 import type { FeaturedProject } from '../../models/project/index.ts'
 

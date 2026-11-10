@@ -16,3 +16,10 @@ import { NAME } from '@content/profile'
     </p>
   </section>
 </Base>
+
+<script>
+  import { ANALYTICS_EVENTS } from '@lib/analytics'
+  import { track } from '@scripts/analytics'
+
+  track(ANALYTICS_EVENTS.PAGE_NOT_FOUND, { path: window.location.pathname })
+</script>

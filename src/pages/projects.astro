@@ -5,6 +5,7 @@ import Section from '@components/Section.astro'
 import Base from '@layouts/Base.astro'
 import { NAME } from '@content/profile'
 import { ARCHIVED_PROJECTS, FEATURED_PROJECTS } from '@content/projects'
+import { ANALYTICS_EVENTS, analyticsAttributes } from '@lib/analytics'
 ---
 
 <Base
@@ -25,6 +26,10 @@ import { ARCHIVED_PROJECTS, FEATURED_PROJECTS } from '@content/projects'
         target="_blank"
         rel="noreferrer"
         class="row-link flex justify-between gap-4 py-1.5"
+        {...analyticsAttributes(ANALYTICS_EVENTS.PROJECT_LINK_CLICKED, {
+          project_title: project.title,
+          placement: 'projects_earlier',
+        })}
       >
         <span class="row-title">{project.title}</span>
         <span class="text-right text-muted">{project.stack.join(' · ')}</span>

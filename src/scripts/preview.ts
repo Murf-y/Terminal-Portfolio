@@ -1,5 +1,6 @@
 /* Floating screenshot beside the project list: follows the hovered or focused row, morphing
    between rows and fading in from hidden. Markup comes from src/components/ProjectList.astro. */
+import { ANALYTICS_EVENTS } from '@lib/analytics'
 import {
   IMAGE_FILTER,
   PREVIEW_ROW_OFFSET,
@@ -7,6 +8,7 @@ import {
   previewTransition,
   shouldMorph,
 } from '@lib/preview'
+import { track } from '@scripts/analytics'
 
 const LIST_SELECTOR = '[data-project-list]'
 const ROW_SELECTOR = '[data-preview-row]'
@@ -44,6 +46,7 @@ function initProjectPreview(list: HTMLElement): void {
       // Each screenshot is rendered at its full height; the frame takes the active one's.
       if (isActive) frame.style.height = image.style.height
     }
+    track(ANALYTICS_EVENTS.PROJECT_PREVIEW_SHOWN, { project_id: projectId })
   }
 
   /* Rows without a screenshot (no link, or no image) hide the preview. */

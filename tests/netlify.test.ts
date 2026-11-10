@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { POSTHOG_ASSETS_HOST, POSTHOG_INGEST_HOST, POSTHOG_PROXY_PATH } from '@lib/analytics'
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
@@ -42,12 +43,19 @@ describe('public/_headers', () => {
 })
 
 describe('public/_redirects', () => {
-  it('permanently redirects the old research page to the Research section', () => {
-    const rules = read('public/_redirects')
-      .split('\n')
-      .filter((line) => line.trim() !== '' && !line.startsWith('#'))
-      .map((line) => line.trim().split(/\s+/))
-    expect(rules).toEqual([['/research', '/#research', '301']])
+  const rules = read('public/_redirects')
+    .split('\n')
+    .filter((line) => line.trim() !== '' && !line.startsWith('#'))
+    .map((line) => line.trim().split(/\s+/))
+
+  it('permanently redirects the old research page, then proxies PostHog in order', () => {
+    expect(rules).toEqual([
+      ['/research', '/#research', '301'],
+      // Assets before the catch-all: Netlify applies the first rule that matches.
+      [`${POSTHOG_PROXY_PATH}/static/*`, `${POSTHOG_ASSETS_HOST}/static/:splat`, '200!'],
+      [`${POSTHOG_PROXY_PATH}/array/*`, `${POSTHOG_ASSETS_HOST}/array/:splat`, '200!'],
+      [`${POSTHOG_PROXY_PATH}/*`, `${POSTHOG_INGEST_HOST}/:splat`, '200!'],
+    ])
   })
 })
 

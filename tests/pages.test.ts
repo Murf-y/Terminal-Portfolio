@@ -13,8 +13,10 @@ import {
   SITE_DESCRIPTION,
 } from '@content/profile'
 import { ARCHIVED_PROJECTS, FEATURED_PROJECTS } from '@content/projects'
+import { ANALYTICS_EVENTS, POSTHOG_LOADER_SCRIPT } from '@lib/analytics'
 import { DEFAULT_THEME, THEME_ATTRIBUTE, THEME_INIT_SCRIPT } from '@lib/theme'
 import { initTerminalLaunchers } from '@scripts/terminal-launcher'
+import { declaredEvent } from './analytics'
 import { mountPage } from './astro'
 
 /* jest-dom matchers need elements from the live document, so <head> checks compare attributes. */
@@ -43,6 +45,23 @@ describe('Base layout', () => {
         (css) => css.includes("font-family:'Inter Variable'") && css.includes(fontFile)
       )
     ).toBe(true)
+  })
+
+  it.each([
+    ['Home', Home],
+    ['About', About],
+    ['Projects', Projects],
+    ['404', NotFound],
+  ])('%s defines the PostHog stub in <head>, then starts analytics there', async (_name, page) => {
+    const rendered = await mountPage(page)
+    const scripts = Array.from(rendered.head.querySelectorAll('script'))
+    expect(scripts[1]?.textContent, 'loader right after the theme script').toBe(
+      POSTHOG_LOADER_SCRIPT
+    )
+    expect(
+      scripts[2]?.getAttribute('type'),
+      'the init module follows in <head>, ahead of every page script in <body>'
+    ).toBe('module')
   })
 
   it('builds the canonical and Open Graph URL from the site URL and the page path', async () => {
@@ -124,9 +143,14 @@ describe('Home', () => {
     const research = screen.getByRole('region', { name: 'Research' })
     expect(research).toHaveAttribute('id', 'research')
     for (const paper of PAPERS) {
-      expect(
-        within(research).getByRole('link', { name: new RegExp(paper.title.slice(0, 30)) })
-      ).toHaveAttribute('href', paperUrl(paper))
+      const link = within(research).getByRole('link', {
+        name: new RegExp(paper.title.slice(0, 30)),
+      })
+      expect(link).toHaveAttribute('href', paperUrl(paper))
+      expect(declaredEvent(link), paper.doi).toEqual({
+        event: ANALYTICS_EVENTS.PAPER_LINK_CLICKED,
+        properties: { paper_doi: paper.doi, paper_title: paper.title },
+      })
     }
   })
 
@@ -176,6 +200,10 @@ describe('Projects', () => {
       const link = within(earlier).getByRole('link', { name: new RegExp(project.title) })
       expect(link).toHaveAttribute('href', project.link)
       expect(link).toHaveTextContent(project.stack.join(' · '))
+      expect(declaredEvent(link), project.title).toEqual({
+        event: ANALYTICS_EVENTS.PROJECT_LINK_CLICKED,
+        properties: { project_title: project.title, placement: 'projects_earlier' },
+      })
     }
   })
 })

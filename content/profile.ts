@@ -1,6 +1,5 @@
 export const NAME = 'Charbel Fayad'
 export const HEADLINE = 'Software engineer'
-export const SITE_URL = 'https://charbelfayad.com'
 export const SITE_DESCRIPTION =
   'Software integration engineer and Scrum Master at Murex. Projects, research and contact.'
 

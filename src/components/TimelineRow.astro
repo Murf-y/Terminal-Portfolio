@@ -1,11 +1,15 @@
 ---
+import type { AnalyticsAttributes } from '@lib/analytics'
+
 interface Props {
   period: string
   /** Renders the row as an external link when set. */
   href?: string
+  /** From analyticsAttributes(): what clicking the linked row captures. */
+  analytics?: AnalyticsAttributes
 }
 
-const { period, href } = Astro.props
+const { period, href, analytics } = Astro.props
 const isLink = href !== undefined
 const Row = isLink ? 'a' : 'div'
 ---
@@ -14,6 +18,7 @@ const Row = isLink ? 'a' : 'div'
   href={href}
   target={isLink ? '_blank' : undefined}
   rel={isLink ? 'noreferrer' : undefined}
+  {...analytics}
   class:list={[{ 'row-link': isLink }, 'grid grid-cols-[88px_minmax(0,1fr)] gap-4 py-1.5']}
 >
   <span class="tabular-nums text-muted">{period}</span>

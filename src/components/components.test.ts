@@ -7,8 +7,10 @@ import Section from '@components/Section.astro'
 import ThemeToggle from '@components/ThemeToggle.astro'
 import TimelineRow from '@components/TimelineRow.astro'
 import { CONTACT_LINKS, HEADLINE, NAME } from '@content/profile'
+import { ANALYTICS_EVENTS, analyticsAttributes } from '@lib/analytics'
 import { PREVIEW_SCALE } from '@lib/preview'
 import type { FeaturedProject } from '@models/project'
+import { declaredEvent, isTracked } from '../../tests/analytics'
 import { mount } from '../../tests/astro'
 
 const WIDE: FeaturedProject = {
@@ -71,6 +73,21 @@ describe('TimelineRow', () => {
     expect(link).toHaveAttribute('target', '_blank')
     expect(link).toHaveAttribute('rel', 'noreferrer')
     expect(link).toHaveClass('row-link')
+    expect(isTracked(link), 'untracked unless asked').toBe(false)
+  })
+
+  it('declares the analytics event it is given', async () => {
+    const analytics = analyticsAttributes(ANALYTICS_EVENTS.PAPER_LINK_CLICKED, {
+      paper_doi: '10.1/x',
+    })
+    await mount(TimelineRow, {
+      props: { period: '2026', href: 'https://doi.org/10.1/x', analytics },
+      slots: { default: 'Paper' },
+    })
+    expect(declaredEvent(screen.getByRole('link', { name: /Paper/ }))).toEqual({
+      event: ANALYTICS_EVENTS.PAPER_LINK_CLICKED,
+      properties: { paper_doi: '10.1/x' },
+    })
   })
 })
 
@@ -83,6 +100,10 @@ describe('ContactLinks', () => {
       expect(anchor).toHaveAttribute('href', link.href)
       expect(anchor.getAttribute('target'), link.label).toBe(link.id === 'email' ? null : '_blank')
       expect(anchor.getAttribute('rel'), link.label).toBe(link.id === 'email' ? null : 'noreferrer')
+      expect(declaredEvent(anchor), link.label).toEqual({
+        event: ANALYTICS_EVENTS.CONTACT_LINK_CLICKED,
+        properties: { contact_method: link.id },
+      })
     }
   })
 
@@ -146,6 +167,22 @@ describe('ProjectList', () => {
     expect(screen.getByRole('link', { name: /Tall app/ })).toHaveAttribute('target', '_blank')
     expect(screen.getByText('Unlinked platform').closest('a')).toBeNull()
     expect(screen.getByText('Unlinked platform').closest('[data-preview-row]')).not.toBeNull()
+  })
+
+  it('declares a project click on every linked row, naming the list it is in', async () => {
+    await mount(ProjectList, { props: { projects: [WIDE, UNLINKED] } })
+    expect(declaredEvent(screen.getByRole('link', { name: /Wide app/ }))).toEqual({
+      event: ANALYTICS_EVENTS.PROJECT_LINK_CLICKED,
+      properties: { project_id: 'wide', project_title: 'Wide app', placement: 'home' },
+    })
+    const unlinked = screen.getByText('Unlinked platform').closest('[data-preview-row]')!
+    expect(isTracked(unlinked), 'nothing to click on an unlinked row').toBe(false)
+
+    await mount(ProjectList, { props: { projects: [WIDE], showStack: true } })
+    expect(
+      declaredEvent(screen.getByRole('link', { name: /Wide app/ })).properties.placement,
+      'the /projects list'
+    ).toBe('projects_recent')
   })
 
   it('tags only rows that have a screenshot with their project id', async () => {

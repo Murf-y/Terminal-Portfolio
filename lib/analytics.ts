@@ -1,6 +1,7 @@
 /* Product analytics with PostHog (EU cloud). The pure rules live here; src/scripts/analytics.ts
-   wires them to the page. Tracking is cookieless: PostHog never writes cookies or storage, and
-   counts unique visitors with a server-side hash, so the site needs no consent banner. */
+   wires them to the page. PostHog keeps its visitor and session IDs in a first-party cookie and
+   localStorage: session replay needs them, and only events with an IP get location and bot
+   filtering, which PostHog strips from cookieless events. There is no consent banner. */
 import type { PostHogConfig } from 'posthog-js'
 import { SITE_URL } from '@content/site'
 import type { CommandResult } from '@lib/terminalCommands'
@@ -38,13 +39,14 @@ export function posthogApiHost(environment: SiteEnvironment): string {
   return environment === 'production' ? POSTHOG_PROXY_PATH : POSTHOG_INGEST_HOST
 }
 
-/** Captures everything the browser SDK can collect without cookies. */
+/** Captures everything the browser SDK can collect. */
 export function posthogConfig(environment: SiteEnvironment): Partial<PostHogConfig> {
   return {
     api_host: posthogApiHost(environment),
     ui_host: POSTHOG_UI_HOST,
     defaults: POSTHOG_DEFAULTS,
-    cookieless_mode: 'always',
+    // Visitors are recognised across pages and visits, so returning-visitor and retention work.
+    persistence: 'localStorage+cookie',
     // Anonymous visitors get person profiles too: the site has no sign-in to identify anyone.
     person_profiles: 'always',
     autocapture: true,

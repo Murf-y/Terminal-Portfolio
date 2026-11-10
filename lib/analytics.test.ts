@@ -42,12 +42,12 @@ describe('posthogApiHost', () => {
 })
 
 describe('posthogConfig', () => {
-  it('is cookieless and turns on every browser capture', () => {
+  it('keeps visitor identity and turns on every browser capture', () => {
     const config = posthogConfig('production')
     expect(config).toMatchObject({
       api_host: POSTHOG_PROXY_PATH,
       ui_host: POSTHOG_UI_HOST,
-      cookieless_mode: 'always',
+      persistence: 'localStorage+cookie',
       person_profiles: 'always',
       autocapture: true,
       capture_pageview: true,
@@ -61,6 +61,10 @@ describe('posthogConfig', () => {
       enable_recording_console_log: true,
       session_recording: { maskAllInputs: false },
     })
+    expect(
+      config.cookieless_mode,
+      'cookieless mode turns off session replay and strips the IP that location needs'
+    ).toBeUndefined()
     expect(config.defaults, 'pinned to a release date, never "latest"').toMatch(
       /^\d{4}-\d{2}-\d{2}$/
     )

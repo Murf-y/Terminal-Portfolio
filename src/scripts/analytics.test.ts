@@ -41,7 +41,7 @@ describe('initAnalytics', () => {
     expect(posthog.init).toHaveBeenCalledTimes(1)
     const [token, config] = posthog.init.mock.calls[0]
     expect(token).toBe(POSTHOG_PROJECT_TOKEN)
-    expect(config).toMatchObject({ api_host: POSTHOG_PROXY_PATH, cookieless_mode: 'always' })
+    expect(config).toMatchObject({ api_host: POSTHOG_PROXY_PATH, disable_session_recording: false })
     expect(posthog.register).toHaveBeenCalledWith({ site_environment: 'production' })
   })
 

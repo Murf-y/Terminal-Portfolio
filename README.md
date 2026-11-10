@@ -40,10 +40,10 @@ checks their declared dimensions. Netlify headers and redirects live in `public/
 
 # Analytics
 
-[PostHog](https://posthog.com) (EU cloud), cookieless: nothing is written to cookies or storage, and
-PostHog counts unique visitors with a server-side hash, so there is no consent banner. Cookieless
-tracking must stay enabled in the PostHog project (Settings → Project → Web analytics), or PostHog
-drops every event.
+[PostHog](https://posthog.com) (EU cloud). PostHog keeps a first-party cookie and localStorage entry
+for visitor and session IDs; session replay needs them, and PostHog only adds location and bot
+filtering to events that are not cookieless. There is no consent banner: for EU and UK visitors
+that falls short of GDPR and ePrivacy, a risk taken deliberately for a personal site.
 
 Pageviews, clicks, scroll depth, rage and dead clicks, heatmaps, web vitals, errors and session
 replay come from the SDK. The site's own events (terminal sessions and commands, theme switches,

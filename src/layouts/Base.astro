@@ -4,7 +4,8 @@ import '../../styles/globals.css'
 import '@fontsource/jetbrains-mono/latin-400.css'
 import '@fontsource/jetbrains-mono/latin-600.css'
 import interLatin from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url'
-import { SITE_URL } from '@content/profile'
+import { SITE_URL } from '@content/site'
+import { POSTHOG_LOADER_SCRIPT } from '@lib/analytics'
 import { DEFAULT_THEME, THEME_INIT_SCRIPT } from '@lib/theme'
 
 interface Props {
@@ -29,6 +30,13 @@ const FONT_FACE = `@font-face{font-family:'Inter Variable';font-style:normal;fon
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script is:inline set:html={THEME_INIT_SCRIPT} />
+    <script is:inline set:html={POSTHOG_LOADER_SCRIPT} />
+    <script>
+      /* In <head>, so PostHog has started before any script in the page tracks an event. */
+      import { initAnalytics } from '@scripts/analytics'
+
+      initAnalytics(window.location.hostname)
+    </script>
     <link rel="preload" href={interLatin} as="font" type="font/woff2" crossorigin />
     <style is:inline set:html={FONT_FACE} />
     <title>{title}</title>

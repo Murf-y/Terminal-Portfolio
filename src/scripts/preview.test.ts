@@ -1,9 +1,11 @@
 import { fireEvent, screen } from '@testing-library/dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import ProjectList from '@components/ProjectList.astro'
+import { ANALYTICS_EVENTS } from '@lib/analytics'
 import { IMAGE_FILTER, MORPH_GRACE_MS, PREVIEW_SCALE } from '@lib/preview'
 import type { FeaturedProject } from '@models/project'
 import { initProjectPreviews } from '@scripts/preview'
+import { startTestAnalytics } from '../../tests/analytics'
 import { mount } from '../../tests/astro'
 
 const WIDE: FeaturedProject = {
@@ -169,6 +171,19 @@ describe('initProjectPreviews', () => {
     fireEvent.blur(wide)
     fireEvent.mouseEnter(placeRow(/Tall app/, 120))
     expect(frame().style.transition).not.toContain('top')
+  })
+
+  it('captures each screenshot shown, by hover or focus, and nothing for rows without one', async () => {
+    const { propertiesOf } = startTestAnalytics()
+    await mountList()
+    fireEvent.mouseEnter(placeRow(/Wide app/, 0))
+    fireEvent.mouseEnter(unlinkedRow())
+    fireEvent.mouseEnter(placeRow(/No screenshot/, 240))
+    fireEvent.focus(placeRow(/Tall app/, 120))
+    expect(propertiesOf(ANALYTICS_EVENTS.PROJECT_PREVIEW_SHOWN)).toEqual([
+      { project_id: 'wide' },
+      { project_id: 'tall' },
+    ])
   })
 
   it('wires each list on the page independently', async () => {

@@ -1,5 +1,6 @@
 ---
 import type { FeaturedProject, ProjectImage } from '@models/project'
+import { ANALYTICS_EVENTS, analyticsAttributes } from '@lib/analytics'
 import {
   IMAGE_FILTER,
   PREVIEW_GAP,
@@ -21,6 +22,8 @@ const hasImage = (project: FeaturedProject): project is ProjectWithImage =>
   project.image !== undefined
 
 const { projects, showStack = false } = Astro.props
+/* Only /projects shows the stack, so it also tells the two lists apart in analytics. */
+const placement = showStack ? 'projects_recent' : 'home'
 const withImages = projects.filter(hasImage)
 /* The frame starts hidden, sized to the first screenshot; src/scripts/preview.ts moves it. */
 const first = withImages[0]
@@ -51,6 +54,11 @@ const first = withImages[0]
         class="row-link block py-2"
         data-preview-row
         data-project-id={hasImage(project) ? project.id : undefined}
+        {...analyticsAttributes(ANALYTICS_EVENTS.PROJECT_LINK_CLICKED, {
+          project_id: project.id,
+          project_title: project.title,
+          placement,
+        })}
       >
         {body}
       </a>

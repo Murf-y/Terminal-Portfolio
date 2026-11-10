@@ -1,5 +1,6 @@
 ---
 import { CONTACT_LINKS } from '@content/profile'
+import { ANALYTICS_EVENTS, analyticsAttributes } from '@lib/analytics'
 ---
 
 <p class="flex flex-wrap gap-x-5 gap-y-1">
@@ -10,6 +11,7 @@ import { CONTACT_LINKS } from '@content/profile'
       <a
         href={link.href}
         class="text-link"
+        {...analyticsAttributes(ANALYTICS_EVENTS.CONTACT_LINK_CLICKED, { contact_method: link.id })}
         target={opensElsewhere ? '_blank' : undefined}
         rel={opensElsewhere ? 'noreferrer' : undefined}
       >

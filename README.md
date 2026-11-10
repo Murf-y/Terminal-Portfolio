@@ -17,8 +17,9 @@
 ![Netlify](https://img.shields.io/badge/-Netlify-00C7B7?style=flat&logo=netlify&logoColor=white)
 ![Prettier](https://img.shields.io/badge/-Prettier-F7B93E?style=flat&logo=prettier&logoColor=white)
 
-Static HTML from Astro, no framework runtime. Pages ship about 2.5 kB of gzipped JS (theme toggle,
-terminal launcher, link prefetch, project preview). The terminal and its font load on first open.
+Static HTML from Astro, no framework runtime. Pages ship about 4.5 kB of gzipped JS (theme toggle,
+terminal launcher, link prefetch, project preview, analytics). The terminal and its font load on
+first open; PostHog's SDK loads asynchronously and never blocks rendering.
 
 # Develop
 
@@ -36,6 +37,23 @@ Content lives in `content/` (profile, projects, papers). Project screenshots in
 `public/images/projects/` ship pre-sized (at most 2x the 288px preview width); `content/content.test.ts`
 checks their declared dimensions. Netlify headers and redirects live in `public/_headers` and
 `public/_redirects`.
+
+# Analytics
+
+[PostHog](https://posthog.com) (EU cloud), cookieless: nothing is written to cookies or storage, and
+PostHog counts unique visitors with a server-side hash, so there is no consent banner. Cookieless
+tracking must stay enabled in the PostHog project (Settings → Project → Web analytics), or PostHog
+drops every event.
+
+Pageviews, clicks, scroll depth, rage and dead clicks, heatmaps, web vitals, errors and session
+replay come from the SDK. The site's own events (terminal sessions and commands, theme switches,
+project previews, project, paper and contact link clicks, 404s) are listed in `lib/analytics.ts`.
+
+- Production sends through `/lantern`, which `public/_redirects` proxies to PostHog, so ad blockers
+  that list PostHog's domains still let events through.
+- Deploy previews send to PostHog directly (Netlify's proxy breaks on `*.netlify.app`). Every event
+  carries `site_environment` (`production` or `preview`); filter on it.
+- `npm run dev` and `astro preview` send nothing.
 
 # Résumé
 

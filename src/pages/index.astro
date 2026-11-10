@@ -8,6 +8,7 @@ import Base from '@layouts/Base.astro'
 import { PAPERS, paperUrl } from '@content/papers'
 import { EXPERIENCE, LINKS, NAME, SITE_DESCRIPTION } from '@content/profile'
 import { FEATURED_PROJECTS } from '@content/projects'
+import { ANALYTICS_EVENTS, analyticsAttributes } from '@lib/analytics'
 ---
 
 <Base title={NAME} description={SITE_DESCRIPTION} path="/">
@@ -44,7 +45,14 @@ import { FEATURED_PROJECTS } from '@content/projects'
 
   <Section id="research" title="Research">
     {PAPERS.map((paper) => (
-      <TimelineRow period={String(paper.year)} href={paperUrl(paper)}>
+      <TimelineRow
+        period={String(paper.year)}
+        href={paperUrl(paper)}
+        analytics={analyticsAttributes(ANALYTICS_EVENTS.PAPER_LINK_CLICKED, {
+          paper_doi: paper.doi,
+          paper_title: paper.title,
+        })}
+      >
         {paper.title}
       </TimelineRow>
     ))}

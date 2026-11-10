@@ -1,5 +1,10 @@
 /* Terminal mode: a macOS-style modal terminal, draggable, resizable and theme-aware.
    Loaded on first open by src/scripts/terminal-launcher.ts. */
+import {
+  ANALYTICS_EVENTS,
+  type TerminalCloseMethod,
+  terminalCommandProperties,
+} from '@lib/analytics'
 import { interpretCommand } from '@lib/terminalCommands'
 import type { OutputLine } from '@lib/terminalContent'
 import {
@@ -12,6 +17,7 @@ import {
   resizeWindow,
 } from '@lib/terminalWindow'
 import type { Theme } from '@lib/theme'
+import { track } from '@scripts/analytics'
 import { currentTheme, toggleTheme } from '@scripts/theme'
 
 /** Opened pages get no handle back to this tab. */
@@ -182,6 +188,8 @@ export function openTerminal(): void {
   if (isOpen) return
 
   const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  /** For the session length reported when the terminal closes. */
+  const openedAt = performance.now()
   const backdrop = document.createElement('div')
   backdrop.className = 'fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm'
   backdrop.innerHTML = WINDOW_MARKUP
@@ -226,6 +234,7 @@ export function openTerminal(): void {
   const toggleMaximized = () => {
     isMaximized = !isMaximized
     layout()
+    track(ANALYTICS_EVENTS.TERMINAL_MAXIMIZE_TOGGLED, { maximized: isMaximized })
   }
 
   /** Removes the window listeners of the drag or resize in progress, if any. */
@@ -305,9 +314,10 @@ export function openTerminal(): void {
       return
     }
     commandHistory.unshift(raw)
+    track(ANALYTICS_EVENTS.TERMINAL_COMMAND_RUN, terminalCommandProperties(raw, result))
     const action = result.action
     if (action?.type === 'exit') {
-      close()
+      close('exit_command')
       return
     }
     if (action?.type === 'clear') {
@@ -316,12 +326,12 @@ export function openTerminal(): void {
     }
     print([{ type: 'command', content: raw }, ...result.output])
     if (action?.type === 'navigate') {
-      close()
+      close('navigate_command')
       window.location.assign(action.route)
     } else if (action?.type === 'open') {
       window.open(action.url, '_blank', NEW_WINDOW_FEATURES)
     } else if (action?.type === 'toggle-theme') {
-      logo.src = LOGO_FOR_THEME[toggleTheme()]
+      logo.src = LOGO_FOR_THEME[toggleTheme('terminal')]
     }
   }
 
@@ -349,7 +359,7 @@ export function openTerminal(): void {
   dialog.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       event.preventDefault()
-      close()
+      close('escape_key')
       return
     }
     if (event.key !== 'Tab') return
@@ -372,19 +382,24 @@ export function openTerminal(): void {
     pressStartedOnBackdrop = event.target === backdrop
   })
   backdrop.addEventListener('click', (event) => {
-    if (event.target === backdrop && pressStartedOnBackdrop) close()
+    if (event.target === backdrop && pressStartedOnBackdrop) close('backdrop')
   })
   body.addEventListener('click', () => input.focus())
-  part(backdrop, '[data-close]').addEventListener('click', () => close())
+  part(backdrop, '[data-close]').addEventListener('click', () => close('close_button'))
   maximize.addEventListener('click', toggleMaximized)
 
   /* The page's listeners all live on the backdrop's subtree, which close() discards. */
-  function close(): void {
+  function close(method: TerminalCloseMethod): void {
     detachPointer?.()
     backdrop.remove()
     document.body.style.overflow = ''
     isOpen = false
     opener?.focus()
+    track(ANALYTICS_EVENTS.TERMINAL_CLOSED, {
+      close_method: method,
+      duration_ms: Math.round(performance.now() - openedAt),
+      commands_run: commandHistory.length,
+    })
   }
 
   logo.src = LOGO_FOR_THEME[currentTheme()]
@@ -395,4 +410,5 @@ export function openTerminal(): void {
   document.body.style.overflow = 'hidden'
   isOpen = true
   input.focus()
+  track(ANALYTICS_EVENTS.TERMINAL_OPENED)
 }

@@ -1,2 +1,9 @@
 # The research page became the Research section on Home.
 /research  /#research  301
+
+# PostHog through the site's own domain, so blockers that list PostHog's hosts still let events
+# through. The path and hosts are the constants in lib/analytics.ts. Netlify applies the first
+# match, so the asset rules come before the catch-all; ! proxies even if a file exists there.
+/lantern/static/*  https://eu-assets.i.posthog.com/static/:splat  200!
+/lantern/array/*  https://eu-assets.i.posthog.com/array/:splat  200!
+/lantern/*  https://eu.i.posthog.com/:splat  200!

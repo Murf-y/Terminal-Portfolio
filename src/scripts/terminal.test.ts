@@ -1,9 +1,11 @@
 import { fireEvent, screen, within } from '@testing-library/dom'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { LINKS, RESUME_PATH } from '@content/profile'
+import { ANALYTICS_EVENTS, type TerminalCloseMethod } from '@lib/analytics'
 import { THEME_ATTRIBUTE } from '@lib/theme'
 import { openTerminal } from '@scripts/terminal'
+import { startTestAnalytics } from '../../tests/analytics'
 
 const WELCOME = "Welcome to Charbel Fayad's terminal."
 
@@ -293,5 +295,88 @@ describe('openTerminal', () => {
     for (const [type, listener] of added) {
       expect(remove, `${type} listener removed on close`).toHaveBeenCalledWith(type, listener)
     }
+  })
+
+  describe('analytics', () => {
+    const terminalEvents = (captured: ReturnType<typeof startTestAnalytics>['captured']) =>
+      captured().filter(([name]) => name.startsWith('terminal_'))
+
+    it('captures the session: open, each command, then how and when it closed', async () => {
+      const { captured } = startTestAnalytics()
+      vi.useFakeTimers({ toFake: ['performance'] })
+      onTestFinished(() => {
+        vi.useRealTimers()
+      })
+      openTerminal()
+      await run('help')
+      await run('nope')
+      vi.advanceTimersByTime(2500)
+      fireEvent.keyDown(prompt(), { key: 'Escape' })
+      expect(terminalEvents(captured)).toEqual([
+        ['terminal_opened', {}],
+        ['terminal_command_run', { command: 'help', printed_error: false, action: 'none' }],
+        ['terminal_command_run', { command: 'nope', printed_error: true, action: 'none' }],
+        ['terminal_closed', { close_method: 'escape_key', duration_ms: 2500, commands_run: 2 }],
+      ])
+    })
+
+    it('does not capture blank input or a second open while already open', async () => {
+      const { propertiesOf } = startTestAnalytics()
+      openTerminal()
+      openTerminal()
+      await run('')
+      expect(propertiesOf(ANALYTICS_EVENTS.TERMINAL_OPENED)).toHaveLength(1)
+      expect(propertiesOf(ANALYTICS_EVENTS.TERMINAL_COMMAND_RUN)).toEqual([])
+    })
+
+    const CLOSES: [TerminalCloseMethod, () => unknown][] = [
+      [
+        'close_button',
+        () => fireEvent.click(screen.getByRole('button', { name: 'Close terminal' })),
+      ],
+      [
+        'backdrop',
+        () => {
+          const backdrop = dialog().parentElement!
+          fireEvent.mouseDown(backdrop)
+          fireEvent.click(backdrop)
+        },
+      ],
+      ['exit_command', () => run('exit')],
+      ['navigate_command', () => run('cd research')],
+    ]
+
+    it.each(CLOSES)('reports a close by %s', async (method, closeIt) => {
+      const { propertiesOf } = startTestAnalytics()
+      openTerminal()
+      await closeIt()
+      expect(queryDialog()).toBeNull()
+      const [closed] = propertiesOf(ANALYTICS_EVENTS.TERMINAL_CLOSED)
+      expect(closed).toMatchObject({ close_method: method })
+      window.history.replaceState(null, '', '/')
+    })
+
+    it('the theme command reports the switch as coming from the terminal', async () => {
+      const { propertiesOf } = startTestAnalytics()
+      openTerminal()
+      await run('theme')
+      expect(propertiesOf(ANALYTICS_EVENTS.THEME_TOGGLED)).toEqual([
+        { theme: 'light', source: 'terminal' },
+      ])
+      expect(propertiesOf(ANALYTICS_EVENTS.TERMINAL_COMMAND_RUN)).toEqual([
+        { command: 'theme', printed_error: false, action: 'toggle-theme' },
+      ])
+    })
+
+    it('captures maximize and restore, from the button and the title bar', () => {
+      const { propertiesOf } = startTestAnalytics()
+      openTerminal()
+      fireEvent.click(screen.getByRole('button', { name: 'Maximize terminal' }))
+      fireEvent.dblClick(titleBar())
+      expect(propertiesOf(ANALYTICS_EVENTS.TERMINAL_MAXIMIZE_TOGGLED)).toEqual([
+        { maximized: true },
+        { maximized: false },
+      ])
+    })
   })
 })
